@@ -45,7 +45,7 @@ vaudio [OPTIONS]
 ```
 
 ### CLI Options
-- `--mode <bars|wave|rain>`: Set initial visualization mode (default: `bars`).
+- `--mode <bars|wave|rain|pulse|spectrogram|spinner|particles>`: Set initial visualization mode (default: `bars`).
 - `--fps <number>`: Target frames per second (default: `30`).
 - `--sensitivity <number>`: Audio sensitivity multiplier (default: `1.0`).
 - `--device <name>`: Specify input device name or index.
@@ -58,13 +58,21 @@ vaudio [OPTIONS]
 - `1`: Switch to **Wave** mode
 - `2`: Switch to **Bars** mode
 - `3`: Switch to **Rain** mode
+- `4`: Switch to **Pulse** mode
+- `5`: Switch to **Spectrogram** mode
+- `6`: Switch to **Spinner** mode
+- `7`: Switch to **Particles** mode
 - `+`: Increase sensitivity
 - `-`: Decrease sensitivity
 
 ## Visual Modes
 1. **Bars**: A classic frequency spectrum equalizer with peak-hold decay.
 2. **Wave**: A scrolling real-time waveform of the raw audio signal.
-3. **Rain**: A "Matrix" style falling character effect where audio intensity drives the density and speed of the rain.
+3. **Rain**: A "Matrix" style falling character effect.
+4. **Pulse**: Concentric expanding shockwaves driven by audio volume.
+5. **Spectrogram**: A waterfall heatmap of frequency history scrolling downwards.
+6. **Spinner**: A rotating starburst that speeds up and expands with the beat.
+7. **Particles**: A fireworks-like explosion of characters flying from the center.
 
 ## Tech Stack
 - **ratatui**: A powerful library for building terminal user interfaces.

@@ -3,6 +3,19 @@ use crate::render::rain::RainDrop;
 use crate::signal::SignalProcessor;
 use rand::Rng;
 
+pub struct PulseRing {
+    pub radius: f32,
+    pub intensity: f32,
+}
+
+pub struct Particle {
+    pub x: f32,
+    pub y: f32,
+    pub vx: f32,
+    pub vy: f32,
+    pub life: f32,
+}
+
 pub struct App {
     pub mode: ViewMode,
     pub sensitivity: f32,
@@ -16,8 +29,12 @@ pub struct App {
     pub wave_data: Vec<f32>,
     pub rms: f32,
     
-    // Rain State
+    // Mode State
     pub rain_drops: Vec<RainDrop>,
+    pub pulse_rings: Vec<PulseRing>,
+    pub spectrogram_history: Vec<Vec<f32>>,
+    pub spinner_angle: f32,
+    pub particles: Vec<Particle>,
     
     // Smoothing factors
     pub smoothing: f32,
@@ -37,6 +54,10 @@ impl App {
             wave_data: vec![0.0; 512],
             rms: 0.0,
             rain_drops: Vec::new(),
+            pulse_rings: Vec::new(),
+            spectrogram_history: Vec::new(),
+            spinner_angle: 0.0,
+            particles: Vec::new(),
             smoothing: 0.7,
         }
     }
@@ -68,8 +89,12 @@ impl App {
             }
         }
 
-        // Update Rain drops logic
+        // Update Mode logic
         self.update_rain(width, height);
+        self.update_pulse();
+        self.update_spectrogram(height);
+        self.update_spinner();
+        self.update_particles(width, height);
     }
 
     fn update_rain(&mut self, width: u16, height: u16) {
@@ -93,6 +118,68 @@ impl App {
             drop.y += drop.speed;
         }
         self.rain_drops.retain(|d| d.y < height as f32 + 20.0);
+    }
+
+    fn update_pulse(&mut self) {
+        // Spawn a new ring if RMS is high enough
+        if self.rms > 0.2 {
+            self.pulse_rings.push(PulseRing {
+                radius: 0.0,
+                intensity: self.rms,
+            });
+        }
+
+        // Expand and filter rings
+        for ring in &mut self.pulse_rings {
+            ring.radius += 1.0 + ring.intensity * 2.0;
+        }
+        self.pulse_rings.retain(|r| r.radius < 100.0);
+    }
+
+    fn update_spectrogram(&mut self, height: u16) {
+        // Save current FFT to history
+        self.spectrogram_history.insert(0, self.fft_data.clone());
+        
+        // Limit history to terminal height
+        if self.spectrogram_history.len() > height as usize {
+            self.spectrogram_history.truncate(height as usize);
+        }
+    }
+
+    fn update_spinner(&mut self) {
+        // Speed up based on RMS
+        self.spinner_angle += 0.05 + self.rms * 0.2;
+        if self.spinner_angle > std::f32::consts::TAU {
+            self.spinner_angle -= std::f32::consts::TAU;
+        }
+    }
+
+    fn update_particles(&mut self, width: u16, height: u16) {
+        let mut rng = rand::thread_rng();
+        
+        // Spawn particles on high RMS
+        if self.rms > 0.1 {
+            let num_new = (self.rms * 10.0) as usize;
+            for _ in 0..num_new {
+                let angle = rng.gen_range(0.0..std::f32::consts::TAU);
+                let speed = rng.gen_range(0.5..2.0) + self.rms * 3.0;
+                self.particles.push(Particle {
+                    x: width as f32 / 2.0,
+                    y: height as f32 / 2.0,
+                    vx: angle.cos() * speed,
+                    vy: angle.sin() * speed * 0.5, // Aspect ratio correction
+                    life: 1.0,
+                });
+            }
+        }
+
+        // Move and age particles
+        for p in &mut self.particles {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.02;
+        }
+        self.particles.retain(|p| p.life > 0.0 && p.x >= 0.0 && p.x < width as f32 && p.y >= 0.0 && p.y < height as f32);
     }
 
     pub fn set_mode(&mut self, mode: ViewMode) {

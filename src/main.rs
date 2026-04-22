@@ -17,7 +17,16 @@ use ratatui::{
     style::Color,
     Terminal,
 };
-use render::{bars::BarsWidget, rain::RainWidget, wave::WaveWidget, ViewMode};
+use render::{
+    bars::BarsWidget,
+    rain::RainWidget,
+    wave::WaveWidget,
+    pulse::PulseWidget,
+    spectrogram::SpectrogramWidget,
+    spinner::SpinnerWidget,
+    particles::ParticlesWidget,
+    ViewMode,
+};
 use std::{
     io,
     sync::mpsc,
@@ -71,6 +80,10 @@ fn main() -> Result<()> {
         "wave" => ViewMode::Wave,
         "bars" => ViewMode::Bars,
         "rain" => ViewMode::Rain,
+        "pulse" => ViewMode::Pulse,
+        "spectrogram" => ViewMode::Spectrogram,
+        "spinner" => ViewMode::Spinner,
+        "particles" => ViewMode::Particles,
         _ => ViewMode::Bars,
     };
 
@@ -146,6 +159,10 @@ fn run_app<B: ratatui::backend::Backend>(
                     KeyCode::Char('1') => app.set_mode(ViewMode::Wave),
                     KeyCode::Char('2') => app.set_mode(ViewMode::Bars),
                     KeyCode::Char('3') => app.set_mode(ViewMode::Rain),
+                    KeyCode::Char('4') => app.set_mode(ViewMode::Pulse),
+                    KeyCode::Char('5') => app.set_mode(ViewMode::Spectrogram),
+                    KeyCode::Char('6') => app.set_mode(ViewMode::Spinner),
+                    KeyCode::Char('7') => app.set_mode(ViewMode::Particles),
                     KeyCode::Char('+') => app.adjust_sensitivity(0.2),
                     KeyCode::Char('-') => app.adjust_sensitivity(-0.2),
                     _ => {}
@@ -189,6 +206,35 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
         ViewMode::Rain => {
             let widget = RainWidget {
                 drops: &app.rain_drops,
+                color,
+            };
+            f.render_widget(widget, area);
+        }
+        ViewMode::Pulse => {
+            let widget = PulseWidget {
+                rings: &app.pulse_rings,
+                color,
+            };
+            f.render_widget(widget, area);
+        }
+        ViewMode::Spectrogram => {
+            let widget = SpectrogramWidget {
+                history: &app.spectrogram_history,
+                color,
+            };
+            f.render_widget(widget, area);
+        }
+        ViewMode::Spinner => {
+            let widget = SpinnerWidget {
+                angle: app.spinner_angle,
+                rms: app.rms,
+                color,
+            };
+            f.render_widget(widget, area);
+        }
+        ViewMode::Particles => {
+            let widget = ParticlesWidget {
+                particles: &app.particles,
                 color,
             };
             f.render_widget(widget, area);
