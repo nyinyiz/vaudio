@@ -2,6 +2,22 @@
 
 A polished, real-time microphone-driven terminal visualizer built with Rust.
 
+## Gallery
+
+| Bars Mode | Wave Mode | Rain Mode |
+| :---: | :---: | :---: |
+| ![Bars](./ss/bars.png) | ![Wave](./ss/wave.png) | ![Rain](./ss/rain.png) |
+
+| Pulse Mode | Spectrogram | Spinner |
+| :---: | :---: | :---: |
+| ![Pulse](./ss/pulse.png) | ![Spectrogram](./ss/spectrogram.png) | ![Spinner](./ss/spinner.png) |
+
+| Particles Mode |
+| :---: |
+| ![Particles](./ss/particles.png) |
+
+**Pro Tip:** Use [VHS](https://github.com/charmbracelet/vhs) to create beautiful animated GIFs of `vaudio` in action!
+
 ## Quick Start
 
 If you have Rust installed, you can build and run `vaudio` immediately:
@@ -73,22 +89,6 @@ vaudio [OPTIONS]
 5. **Spectrogram**: A waterfall heatmap of frequency history scrolling downwards.
 6. **Spinner**: A rotating starburst that speeds up and expands with the beat.
 7. **Particles**: A fireworks-like explosion of characters flying from the center.
-
-## Gallery
-
-| Bars Mode | Wave Mode | Rain Mode |
-| :---: | :---: | :---: |
-| ![Bars](./ss/bars.png) | ![Wave](./ss/wave.png) | ![Rain](./ss/rain.png) |
-
-| Pulse Mode | Spectrogram | Spinner |
-| :---: | :---: | :---: |
-| ![Pulse](./ss/pulse.png) | ![Spectrogram](./ss/spectrogram.png) | ![Spinner](./ss/spinner.png) |
-
-| Particles Mode |
-| :---: |
-| ![Particles](./ss/particles.png) |
-
-**Pro Tip:** Use [VHS](https://github.com/charmbracelet/vhs) to create beautiful animated GIFs of `vaudio` in action!
 
 ## Tech Stack
 - **ratatui**: A powerful library for building terminal user interfaces.
