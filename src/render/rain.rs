@@ -15,7 +15,6 @@ pub struct RainDrop {
 pub struct RainWidget<'a> {
     pub drops: &'a [RainDrop],
     pub color: Color,
-    pub intensity: f32,
 }
 
 impl<'a> Widget for RainWidget<'a> {

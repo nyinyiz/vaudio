@@ -190,7 +190,6 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
             let widget = RainWidget {
                 drops: &app.rain_drops,
                 color,
-                intensity: app.rms,
             };
             f.render_widget(widget, area);
         }

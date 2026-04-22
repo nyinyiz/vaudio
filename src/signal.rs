@@ -7,7 +7,6 @@ pub struct SignalProcessor {
 
 pub struct SignalData {
     pub rms: f32,
-    pub peak: f32,
     pub fft: Vec<f32>,
 }
 
@@ -23,17 +22,14 @@ impl SignalProcessor {
         if samples.is_empty() {
             return SignalData {
                 rms: 0.0,
-                peak: 0.0,
                 fft: vec![0.0; self.fft_size / 2],
             };
         }
 
-        // 1. RMS and Peak
+        // 1. RMS
         let mut sum_sq = 0.0;
-        let mut max_abs: f32 = 0.0;
         for &s in samples {
             sum_sq += s * s;
-            max_abs = max_abs.max(s.abs());
         }
         let rms = (sum_sq / samples.len() as f32).sqrt();
 
@@ -62,7 +58,6 @@ impl SignalProcessor {
 
         SignalData {
             rms,
-            peak: max_abs,
             fft: magnitudes,
         }
     }
