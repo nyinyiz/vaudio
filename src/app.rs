@@ -1,6 +1,6 @@
 use crate::render::ViewMode;
 use crate::render::rain::RainDrop;
-use crate::signal::SignalProcessor;
+use crate::signal::{SignalProcessor, SoundType};
 use rand::Rng;
 
 pub struct PulseRing {
@@ -28,6 +28,7 @@ pub struct App {
     pub peaks: Vec<f32>,
     pub wave_data: Vec<f32>,
     pub rms: f32,
+    pub sound_type: SoundType,
     
     // Mode State
     pub rain_drops: Vec<RainDrop>,
@@ -53,6 +54,7 @@ impl App {
             peaks: vec![0.0; fft_size / 2],
             wave_data: vec![0.0; 512],
             rms: 0.0,
+            sound_type: SoundType::Silence,
             rain_drops: Vec::new(),
             pulse_rings: Vec::new(),
             spectrogram_history: Vec::new(),
@@ -64,6 +66,7 @@ impl App {
 
     pub fn update_audio(&mut self, samples: &[f32], width: u16, height: u16) {
         let signal = self.processor.process(samples);
+        self.sound_type = signal.sound_type;
         
         // Update RMS with sensitivity
         self.rms = (signal.rms * self.sensitivity).min(1.0);
