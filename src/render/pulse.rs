@@ -28,7 +28,7 @@ impl<'a> Widget for PulseWidget<'a> {
                 for dx in -r..=r {
                     // Using Manhattan distance or Euclidean distance
                     let dist = ((dx * dx) as f32 + (dy * dy * 4) as f32).sqrt(); // 4x multiplier for aspect ratio
-                    if (dist - r as f32).abs() < 1.0 {
+                    if (dist - r as f32).abs() < 1.5 { // Increased thickness from 1.0 to 1.5
                         let x = center_x as i16 + dx;
                         let y = center_y as i16 + dy;
 

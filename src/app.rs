@@ -122,7 +122,7 @@ impl App {
 
     fn update_pulse(&mut self) {
         // Spawn a new ring if RMS is high enough
-        if self.rms > 0.2 {
+        if self.rms > 0.05 {
             self.pulse_rings.push(PulseRing {
                 radius: 0.0,
                 intensity: self.rms,
@@ -131,9 +131,9 @@ impl App {
 
         // Expand and filter rings
         for ring in &mut self.pulse_rings {
-            ring.radius += 1.0 + ring.intensity * 2.0;
+            ring.radius += 0.5 + ring.intensity * 1.5;
         }
-        self.pulse_rings.retain(|r| r.radius < 100.0);
+        self.pulse_rings.retain(|r| r.radius < 200.0);
     }
 
     fn update_spectrogram(&mut self, height: u16) {
@@ -158,11 +158,11 @@ impl App {
         let mut rng = rand::thread_rng();
         
         // Spawn particles on high RMS
-        if self.rms > 0.1 {
-            let num_new = (self.rms * 10.0) as usize;
+        if self.rms > 0.05 {
+            let num_new = (self.rms * 30.0) as usize;
             for _ in 0..num_new {
                 let angle = rng.gen_range(0.0..std::f32::consts::TAU);
-                let speed = rng.gen_range(0.5..2.0) + self.rms * 3.0;
+                let speed = rng.gen_range(0.2..1.5) + self.rms * 2.0;
                 self.particles.push(Particle {
                     x: width as f32 / 2.0,
                     y: height as f32 / 2.0,
@@ -177,9 +177,9 @@ impl App {
         for p in &mut self.particles {
             p.x += p.vx;
             p.y += p.vy;
-            p.life -= 0.02;
+            p.life -= 0.01; // Slower aging
         }
-        self.particles.retain(|p| p.life > 0.0 && p.x >= 0.0 && p.x < width as f32 && p.y >= 0.0 && p.y < height as f32);
+        self.particles.retain(|p| p.life > 0.0 && p.x >= -10.0 && p.x < width as f32 + 10.0 && p.y >= -10.0 && p.y < height as f32 + 10.0);
     }
 
     pub fn set_mode(&mut self, mode: ViewMode) {
