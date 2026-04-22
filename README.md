@@ -76,20 +76,17 @@ vaudio [OPTIONS]
 
 ## Gallery
 
-*Note: Replace these placeholders with your own screenshots by adding images to a `/screenshots` folder.*
-
 | Bars Mode | Wave Mode | Rain Mode |
 | :---: | :---: | :---: |
-| ![Bars](https://via.placeholder.com/300x200?text=Bars+Mode) | ![Wave](https://via.placeholder.com/300x200?text=Wave+Mode) | ![Rain](https://via.placeholder.com/300x200?text=Rain+Mode) |
+| ![Bars](./ss/bars.png) | ![Wave](./ss/wave.png) | ![Rain](./ss/rain.png) |
 
 | Pulse Mode | Spectrogram | Spinner |
 | :---: | :---: | :---: |
-| ![Pulse](https://via.placeholder.com/300x200?text=Pulse+Mode) | ![Spectrogram](https://via.placeholder.com/300x200?text=Spectrogram) | ![Spinner](https://via.placeholder.com/300x200?text=Spinner) |
+| ![Pulse](./ss/pulse.png) | ![Spectrogram](./ss/spectrogram.png) | ![Spinner](./ss/spinner.png) |
 
-### How to add your own screenshots:
-1. Create a folder named `screenshots` in the root of this project.
-2. Save your terminal captures as `bars.png`, `wave.png`, etc.
-3. Update the links in `README.md` to point to `./screenshots/bars.png`.
+| Particles Mode |
+| :---: |
+| ![Particles](./ss/particles.png) |
 
 **Pro Tip:** Use [VHS](https://github.com/charmbracelet/vhs) to create beautiful animated GIFs of `vaudio` in action!
 
