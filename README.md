@@ -1,37 +1,57 @@
 # vaudio
 
-A real-time microphone-driven terminal visualizer built with Rust.
+A polished, real-time microphone-driven terminal visualizer built with Rust.
 
-## Features
-- **Real-time Visualization**: High-performance audio processing with FFT.
-- **Three Modes**:
-  - `bars`: Frequency spectrum equalizer with peak-hold effect.
-  - `wave`: Scrolling raw waveform.
-  - `rain`: Matrix-inspired falling rain modulated by audio intensity.
-- **Customizable**: Control FPS, sensitivity, and input device via CLI.
-- **Interactive**: Switch modes and adjust sensitivity on the fly.
+## Quick Start
 
-## Installation
-Ensure you have Rust and Cargo installed.
+If you have Rust installed, you can build and run `vaudio` immediately:
 
 ```bash
-cargo build --release
-```
+# Clone the repository
+git clone https://github.com/nyinyiz/vaudio.git
+cd vaudio
 
-## Usage
-Run with default settings:
-```bash
+# Build and run in one step
 cargo run --release
 ```
 
+## Installation & Building
+
+### Prerequisites
+- **Rust Stable**: [Install Rust](https://rustup.rs/)
+- **System Dependencies**:
+  - **macOS**: None (uses native CoreAudio).
+  - **Linux**: Requires `libasound2-dev` (ALSA).
+  - **Windows**: None (uses WASAPI).
+
+### Build for Release
+To build a highly optimized binary:
+```bash
+cargo build --release
+```
+The resulting binary will be located at: `./target/release/vaudio`.
+
+### Global Installation
+To install `vaudio` as a command on your system:
+```bash
+cargo install --path .
+```
+After this, you can simply run `vaudio` from any directory.
+
+## Usage
+
+```bash
+vaudio [OPTIONS]
+```
+
 ### CLI Options
-- `--mode <bars|wave|rain>`: Set initial visualization mode.
-- `--fps <number>`: Target frames per second (default: 30).
-- `--sensitivity <number>`: Audio sensitivity multiplier (default: 1.0).
+- `--mode <bars|wave|rain>`: Set initial visualization mode (default: `bars`).
+- `--fps <number>`: Target frames per second (default: `30`).
+- `--sensitivity <number>`: Audio sensitivity multiplier (default: `1.0`).
 - `--device <name>`: Specify input device name or index.
 - `--list`: List all available input devices.
-- `--no-color`: Disable color output.
-- `--mirror`: Mirror the visualization (bars mode).
+- `--no-color`: Disable color output for a monochrome look.
+- `--mirror`: Mirror the visualization (especially useful in `bars` mode).
 
 ### Keyboard Controls
 - `q`: Quit
@@ -41,9 +61,14 @@ cargo run --release
 - `+`: Increase sensitivity
 - `-`: Decrease sensitivity
 
+## Visual Modes
+1. **Bars**: A classic frequency spectrum equalizer with peak-hold decay.
+2. **Wave**: A scrolling real-time waveform of the raw audio signal.
+3. **Rain**: A "Matrix" style falling character effect where audio intensity drives the density and speed of the rain.
+
 ## Tech Stack
-- **ratatui**: Terminal UI framework.
+- **ratatui**: A powerful library for building terminal user interfaces.
 - **cpal**: Cross-platform audio capture.
-- **rustfft**: High-performance FFT library.
-- **crossterm**: Terminal backend and input handling.
-- **clap**: Command-line argument parsing.
+- **rustfft**: High-performance Fast Fourier Transform library.
+- **crossterm**: Terminal backend and cross-platform input handling.
+- **clap**: Robust command-line argument parsing.
