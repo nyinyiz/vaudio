@@ -154,8 +154,9 @@ fn run_app<B: ratatui::backend::Backend>(
         }
 
         // Process all available audio chunks
+        let size = terminal.size()?;
         while let Ok(samples) = rx.try_recv() {
-            app.update_audio(&samples);
+            app.update_audio(&samples, size.width, size.height);
         }
 
         if last_tick.elapsed() >= tick_rate {

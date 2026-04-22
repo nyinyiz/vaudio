@@ -1,0 +1,14 @@
+/Users/nyinyizaw/Documents/vaudio/vaudio/target/release/deps/libclang_sys-e94a736f89b3cce6.rmeta: /Users/nyinyizaw/.cargo/registry/src/index.crates.io-6f17d22bba15001f/clang-sys-1.8.1/src/lib.rs /Users/nyinyizaw/.cargo/registry/src/index.crates.io-6f17d22bba15001f/clang-sys-1.8.1/src/support.rs /Users/nyinyizaw/.cargo/registry/src/index.crates.io-6f17d22bba15001f/clang-sys-1.8.1/src/link.rs /Users/nyinyizaw/Documents/vaudio/vaudio/target/release/build/clang-sys-42a10c982377df21/out/macros.rs /Users/nyinyizaw/Documents/vaudio/vaudio/target/release/build/clang-sys-42a10c982377df21/out/common.rs /Users/nyinyizaw/Documents/vaudio/vaudio/target/release/build/clang-sys-42a10c982377df21/out/dynamic.rs
+
+/Users/nyinyizaw/Documents/vaudio/vaudio/target/release/deps/libclang_sys-e94a736f89b3cce6.rlib: /Users/nyinyizaw/.cargo/registry/src/index.crates.io-6f17d22bba15001f/clang-sys-1.8.1/src/lib.rs /Users/nyinyizaw/.cargo/registry/src/index.crates.io-6f17d22bba15001f/clang-sys-1.8.1/src/support.rs /Users/nyinyizaw/.cargo/registry/src/index.crates.io-6f17d22bba15001f/clang-sys-1.8.1/src/link.rs /Users/nyinyizaw/Documents/vaudio/vaudio/target/release/build/clang-sys-42a10c982377df21/out/macros.rs /Users/nyinyizaw/Documents/vaudio/vaudio/target/release/build/clang-sys-42a10c982377df21/out/common.rs /Users/nyinyizaw/Documents/vaudio/vaudio/target/release/build/clang-sys-42a10c982377df21/out/dynamic.rs
+
+/Users/nyinyizaw/Documents/vaudio/vaudio/target/release/deps/clang_sys-e94a736f89b3cce6.d: /Users/nyinyizaw/.cargo/registry/src/index.crates.io-6f17d22bba15001f/clang-sys-1.8.1/src/lib.rs /Users/nyinyizaw/.cargo/registry/src/index.crates.io-6f17d22bba15001f/clang-sys-1.8.1/src/support.rs /Users/nyinyizaw/.cargo/registry/src/index.crates.io-6f17d22bba15001f/clang-sys-1.8.1/src/link.rs /Users/nyinyizaw/Documents/vaudio/vaudio/target/release/build/clang-sys-42a10c982377df21/out/macros.rs /Users/nyinyizaw/Documents/vaudio/vaudio/target/release/build/clang-sys-42a10c982377df21/out/common.rs /Users/nyinyizaw/Documents/vaudio/vaudio/target/release/build/clang-sys-42a10c982377df21/out/dynamic.rs
+
+/Users/nyinyizaw/.cargo/registry/src/index.crates.io-6f17d22bba15001f/clang-sys-1.8.1/src/lib.rs:
+/Users/nyinyizaw/.cargo/registry/src/index.crates.io-6f17d22bba15001f/clang-sys-1.8.1/src/support.rs:
+/Users/nyinyizaw/.cargo/registry/src/index.crates.io-6f17d22bba15001f/clang-sys-1.8.1/src/link.rs:
+/Users/nyinyizaw/Documents/vaudio/vaudio/target/release/build/clang-sys-42a10c982377df21/out/macros.rs:
+/Users/nyinyizaw/Documents/vaudio/vaudio/target/release/build/clang-sys-42a10c982377df21/out/common.rs:
+/Users/nyinyizaw/Documents/vaudio/vaudio/target/release/build/clang-sys-42a10c982377df21/out/dynamic.rs:
+
+# env-dep:OUT_DIR=/Users/nyinyizaw/Documents/vaudio/vaudio/target/release/build/clang-sys-42a10c982377df21/out

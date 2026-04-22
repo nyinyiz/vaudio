@@ -41,7 +41,7 @@ impl App {
         }
     }
 
-    pub fn update_audio(&mut self, samples: &[f32]) {
+    pub fn update_audio(&mut self, samples: &[f32], width: u16, height: u16) {
         let signal = self.processor.process(samples);
         
         // Update RMS with sensitivity
@@ -69,19 +69,20 @@ impl App {
         }
 
         // Update Rain drops logic
-        self.update_rain();
+        self.update_rain(width, height);
     }
 
-    fn update_rain(&mut self) {
+    fn update_rain(&mut self, width: u16, height: u16) {
         let mut rng = rand::thread_rng();
         
-        // Spawn drops based on RMS
-        if self.rms > 0.05 && rng.gen_bool((self.rms * 0.5) as f64) {
-            let x = rng.gen_range(0..200); // Will be clamped in render
+        // Higher spawn rate and use actual terminal width
+        let spawn_chance = (self.rms * 3.0).clamp(0.05, 0.9);
+        if width > 0 && rng.gen_bool(spawn_chance as f64) {
+            let x = rng.gen_range(0..width);
             self.rain_drops.push(RainDrop {
                 x,
                 y: 0.0,
-                speed: rng.gen_range(0.5..1.5) + self.rms * 2.0,
+                speed: rng.gen_range(0.2..0.6) + self.rms * 1.0,
                 length: rng.gen_range(5..15),
                 chars: (0..20).map(|_| rng.gen_range(33..126) as u8 as char).collect(),
             });
@@ -91,7 +92,7 @@ impl App {
         for drop in &mut self.rain_drops {
             drop.y += drop.speed;
         }
-        self.rain_drops.retain(|d| d.y < 100.0); // Assume max height 100 for safety
+        self.rain_drops.retain(|d| d.y < height as f32 + 20.0);
     }
 
     pub fn set_mode(&mut self, mode: ViewMode) {
