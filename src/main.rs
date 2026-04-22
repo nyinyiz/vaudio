@@ -47,8 +47,8 @@ struct Args {
     #[arg(short, long, default_value_t = 30)]
     fps: u32,
 
-    /// Input sensitivity multiplier
-    #[arg(short, long, default_value_t = 1.0)]
+    /// Input sensitivity multiplier (Max: 10.0)
+    #[arg(short, long, default_value_t = 10.0)]
     sensitivity: f32,
 
     /// Device name or index (use --list to see options)
@@ -281,7 +281,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
             Span::styled(format!("{:.1}", app.sensitivity), Style::default().fg(Color::Yellow)),
             Span::raw(" | "),
             Span::styled(" KEYS: ", Style::default().add_modifier(Modifier::BOLD)),
-            Span::raw("[1-7] Modes [+/-] Sens [q] Quit"),
+            Span::raw("[1-7] Modes [+/-] Adjust Sens [q] Quit"),
         ])
     ];
 

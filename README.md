@@ -47,7 +47,7 @@ vaudio [OPTIONS]
 ### CLI Options
 - `--mode <bars|wave|rain|pulse|spectrogram|spinner|particles>`: Set initial visualization mode (default: `bars`).
 - `--fps <number>`: Target frames per second (default: `30`).
-- `--sensitivity <number>`: Audio sensitivity multiplier (default: `1.0`).
+- `--sensitivity <number>`: Audio sensitivity multiplier (default: `10.0`).
 - `--device <name>`: Specify input device name or index.
 - `--list`: List all available input devices.
 - `--no-color`: Disable color output for a monochrome look.
