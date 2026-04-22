@@ -14,7 +14,10 @@ use crossterm::{
 };
 use ratatui::{
     backend::CrosstermBackend,
-    style::Color,
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Modifier, Style},
+    text::{Line, Span},
+    widgets::Paragraph,
     Terminal,
 };
 use render::{
@@ -183,61 +186,106 @@ fn run_app<B: ratatui::backend::Backend>(
 }
 
 fn ui(f: &mut ratatui::Frame, app: &App) {
-    let area = f.size();
-    let color = if app.no_color { Color::White } else { Color::Green };
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(0), Constraint::Length(1)])
+        .split(f.size());
 
+    let area = chunks[0];
+    let help_area = chunks[1];
+
+    let color = if app.no_color {
+        Color::White
+    } else {
+        Color::Green
+    };
+
+    // Render the visualizer in the main area
     match app.mode {
         ViewMode::Bars => {
-            let widget = BarsWidget {
-                data: &app.fft_data,
-                peaks: &app.peaks,
-                color,
-                mirror: app.mirror,
-            };
-            f.render_widget(widget, area);
+            f.render_widget(
+                BarsWidget {
+                    data: &app.fft_data,
+                    peaks: &app.peaks,
+                    color,
+                    mirror: app.mirror,
+                },
+                area,
+            );
         }
         ViewMode::Wave => {
-            let widget = WaveWidget {
-                samples: &app.wave_data,
-                color,
-            };
-            f.render_widget(widget, area);
+            f.render_widget(
+                WaveWidget {
+                    samples: &app.wave_data,
+                    color,
+                },
+                area,
+            );
         }
         ViewMode::Rain => {
-            let widget = RainWidget {
-                drops: &app.rain_drops,
-                color,
-            };
-            f.render_widget(widget, area);
+            f.render_widget(
+                RainWidget {
+                    drops: &app.rain_drops,
+                    color,
+                },
+                area,
+            );
         }
         ViewMode::Pulse => {
-            let widget = PulseWidget {
-                rings: &app.pulse_rings,
-                color,
-            };
-            f.render_widget(widget, area);
+            f.render_widget(
+                PulseWidget {
+                    rings: &app.pulse_rings,
+                    color,
+                },
+                area,
+            );
         }
         ViewMode::Spectrogram => {
-            let widget = SpectrogramWidget {
-                history: &app.spectrogram_history,
-                color,
-            };
-            f.render_widget(widget, area);
+            f.render_widget(
+                SpectrogramWidget {
+                    history: &app.spectrogram_history,
+                    color,
+                },
+                area,
+            );
         }
         ViewMode::Spinner => {
-            let widget = SpinnerWidget {
-                angle: app.spinner_angle,
-                rms: app.rms,
-                color,
-            };
-            f.render_widget(widget, area);
+            f.render_widget(
+                SpinnerWidget {
+                    angle: app.spinner_angle,
+                    rms: app.rms,
+                    color,
+                },
+                area,
+            );
         }
         ViewMode::Particles => {
-            let widget = ParticlesWidget {
-                particles: &app.particles,
-                color,
-            };
-            f.render_widget(widget, area);
+            f.render_widget(
+                ParticlesWidget {
+                    particles: &app.particles,
+                    color,
+                },
+                area,
+            );
         }
     }
+
+    // Render the help bar at the bottom
+    let mode_str = format!("{:?}", app.mode).to_uppercase();
+    let help_text = vec![
+        Line::from(vec![
+            Span::styled(" MODE: ", Style::default().add_modifier(Modifier::BOLD)),
+            Span::styled(mode_str, Style::default().fg(Color::Yellow)),
+            Span::raw(" | "),
+            Span::styled(" SENS: ", Style::default().add_modifier(Modifier::BOLD)),
+            Span::styled(format!("{:.1}", app.sensitivity), Style::default().fg(Color::Yellow)),
+            Span::raw(" | "),
+            Span::styled(" KEYS: ", Style::default().add_modifier(Modifier::BOLD)),
+            Span::raw("[1-7] Modes [+/-] Sens [q] Quit"),
+        ])
+    ];
+
+    let help_bar = Paragraph::new(help_text)
+        .style(Style::default().bg(Color::DarkGray).fg(Color::White));
+    f.render_widget(help_bar, help_area);
 }
