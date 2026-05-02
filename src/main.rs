@@ -245,8 +245,8 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
                 BarsWidget {
                     data: &app.fft_data,
                     peaks: &app.peaks,
-                    color: palette.primary,
                     peak_color: palette.peak,
+                    levels: palette.levels,
                     mirror: app.mirror,
                 },
                 area,
@@ -256,7 +256,8 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
             f.render_widget(
                 WaveWidget {
                     samples: &app.wave_data,
-                    color: palette.primary,
+                    accent_color: palette.accent,
+                    levels: palette.levels,
                 },
                 area,
             );
@@ -265,7 +266,8 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
             f.render_widget(
                 RainWidget {
                     drops: &app.rain_drops,
-                    color: palette.primary,
+                    peak_color: palette.peak,
+                    levels: palette.levels,
                 },
                 area,
             );
@@ -274,7 +276,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
             f.render_widget(
                 PulseWidget {
                     rings: &app.pulse_rings,
-                    color: palette.primary,
+                    levels: palette.levels,
                 },
                 area,
             );
@@ -283,7 +285,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
             f.render_widget(
                 SpectrogramWidget {
                     history: &app.spectrogram_history,
-                    color: palette.primary,
+                    levels: palette.levels,
                 },
                 area,
             );
@@ -293,7 +295,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
                 SpinnerWidget {
                     angle: app.spinner_angle,
                     rms: app.rms,
-                    color: palette.primary,
+                    levels: palette.levels,
                 },
                 area,
             );
@@ -302,7 +304,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
             f.render_widget(
                 ParticlesWidget {
                     particles: &app.particles,
-                    color: palette.primary,
+                    levels: palette.levels,
                 },
                 area,
             );

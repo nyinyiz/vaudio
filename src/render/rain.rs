@@ -14,7 +14,8 @@ pub struct RainDrop {
 
 pub struct RainWidget<'a> {
     pub drops: &'a [RainDrop],
-    pub color: Color,
+    pub peak_color: Color,
+    pub levels: [Color; 5],
 }
 
 impl<'a> Widget for RainWidget<'a> {
@@ -34,11 +35,11 @@ impl<'a> Widget for RainWidget<'a> {
                     let char_idx = (i + drop.y as usize) % drop.chars.len();
                     let c = drop.chars[char_idx];
 
-                    let _alpha = 1.0 - (i as f32 / drop.length as f32);
+                    let alpha = 1.0 - (i as f32 / drop.length as f32);
                     let final_color = if i == 0 {
-                        Color::White // Lead character
+                        self.peak_color
                     } else {
-                        self.color // Tail
+                        level_color(&self.levels, alpha)
                     };
 
                     buf.get_mut(area.left() + drop.x, area.top() + y as u16)
@@ -48,4 +49,9 @@ impl<'a> Widget for RainWidget<'a> {
             }
         }
     }
+}
+
+fn level_color(levels: &[Color; 5], value: f32) -> Color {
+    let index = (value.clamp(0.0, 1.0) * (levels.len() - 1) as f32).round() as usize;
+    levels[index]
 }

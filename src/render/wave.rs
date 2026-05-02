@@ -6,7 +6,8 @@ use ratatui::{
 
 pub struct WaveWidget<'a> {
     pub samples: &'a [f32],
-    pub color: Color,
+    pub accent_color: Color,
+    pub levels: [Color; 5],
 }
 
 impl<'a> Widget for WaveWidget<'a> {
@@ -25,10 +26,16 @@ impl<'a> Widget for WaveWidget<'a> {
             let offset = (sample * amplitude).round() as i16;
             let y = (mid_y as i16 + offset) as u16;
             let y = y.clamp(area.top(), area.bottom() - 1);
+            let intensity = sample.abs().clamp(0.0, 1.0);
+            let wave_color = level_color(&self.levels, intensity);
+
+            buf.get_mut(area.left() + x, mid_y)
+                .set_symbol("─")
+                .set_style(Style::default().fg(self.accent_color));
 
             buf.get_mut(area.left() + x, y)
                 .set_symbol("·")
-                .set_style(Style::default().fg(self.color));
+                .set_style(Style::default().fg(wave_color));
 
             // Draw a vertical line connecting to center to make it look like a solid wave
             let start = y.min(mid_y);
@@ -36,8 +43,13 @@ impl<'a> Widget for WaveWidget<'a> {
             for fill_y in start..=end {
                 buf.get_mut(area.left() + x, fill_y)
                     .set_symbol("┃")
-                    .set_style(Style::default().fg(self.color));
+                    .set_style(Style::default().fg(wave_color));
             }
         }
     }
+}
+
+fn level_color(levels: &[Color; 5], value: f32) -> Color {
+    let index = (value.clamp(0.0, 1.0) * (levels.len() - 1) as f32).round() as usize;
+    levels[index]
 }

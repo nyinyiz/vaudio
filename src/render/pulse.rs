@@ -7,7 +7,7 @@ use ratatui::{
 
 pub struct PulseWidget<'a> {
     pub rings: &'a [PulseRing],
-    pub color: Color,
+    pub levels: [Color; 5],
 }
 
 impl<'a> Widget for PulseWidget<'a> {
@@ -41,12 +41,29 @@ impl<'a> Widget for PulseWidget<'a> {
                             && y < area.bottom() as i16
                         {
                             buf.get_mut(x as u16, y as u16)
-                                .set_symbol("∘")
-                                .set_style(Style::default().fg(self.color));
+                                .set_symbol(ring_symbol(ring.intensity))
+                                .set_style(
+                                    Style::default().fg(level_color(&self.levels, ring.intensity)),
+                                );
                         }
                     }
                 }
             }
         }
     }
+}
+
+fn ring_symbol(intensity: f32) -> &'static str {
+    if intensity > 0.7 {
+        "●"
+    } else if intensity > 0.35 {
+        "○"
+    } else {
+        "∘"
+    }
+}
+
+fn level_color(levels: &[Color; 5], value: f32) -> Color {
+    let index = (value.clamp(0.0, 1.0) * (levels.len() - 1) as f32).round() as usize;
+    levels[index]
 }

@@ -7,8 +7,8 @@ use ratatui::{
 pub struct BarsWidget<'a> {
     pub data: &'a [f32],
     pub peaks: &'a [f32],
-    pub color: Color,
     pub peak_color: Color,
+    pub levels: [Color; 5],
     pub mirror: bool,
 }
 
@@ -37,9 +37,10 @@ impl<'a> Widget for BarsWidget<'a> {
                 let current_y = area.bottom() - 1 - y;
                 if y < bar_height {
                     let symbol = get_block_char(y, bar_height);
+                    let fill_ratio = (y + 1) as f32 / area.height as f32;
                     buf.get_mut(x, current_y)
                         .set_symbol(symbol)
-                        .set_style(Style::default().fg(self.color));
+                        .set_style(Style::default().fg(level_color(&self.levels, fill_ratio)));
                 } else if y + 1 == peak_height && peak_height > 0 {
                     buf.get_mut(x, current_y)
                         .set_symbol("▔")
@@ -52,6 +53,11 @@ impl<'a> Widget for BarsWidget<'a> {
 
 fn get_block_char(_y: u16, _max: u16) -> &'static str {
     "█"
+}
+
+fn level_color(levels: &[Color; 5], value: f32) -> Color {
+    let index = (value.clamp(0.0, 1.0) * (levels.len() - 1) as f32).round() as usize;
+    levels[index]
 }
 
 fn column_range(len: usize, column: usize, columns: usize) -> Option<std::ops::Range<usize>> {
@@ -86,7 +92,8 @@ fn max_column(data: &[f32], column: usize, columns: usize) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use super::{average_column, column_range, max_column};
+    use super::{average_column, column_range, level_color, max_column};
+    use ratatui::style::Color;
 
     #[test]
     fn column_range_never_returns_empty_ranges_for_wide_terminals() {
@@ -111,5 +118,19 @@ mod tests {
 
         assert_eq!(max_column(&data, 0, 2), 0.7);
         assert_eq!(max_column(&data, 1, 2), 0.4);
+    }
+
+    #[test]
+    fn level_color_clamps_to_palette() {
+        let levels = [
+            Color::Black,
+            Color::Red,
+            Color::Yellow,
+            Color::Green,
+            Color::White,
+        ];
+
+        assert_eq!(level_color(&levels, -1.0), Color::Black);
+        assert_eq!(level_color(&levels, 2.0), Color::White);
     }
 }

@@ -6,7 +6,7 @@ use ratatui::{
 
 pub struct SpectrogramWidget<'a> {
     pub history: &'a Vec<Vec<f32>>,
-    pub color: Color,
+    pub levels: [Color; 5],
 }
 
 impl<'a> Widget for SpectrogramWidget<'a> {
@@ -29,7 +29,7 @@ impl<'a> Widget for SpectrogramWidget<'a> {
                 let symbol = get_intensity_char(val);
                 buf.get_mut(area.left() + x, current_y)
                     .set_symbol(symbol)
-                    .set_style(Style::default().fg(self.color));
+                    .set_style(Style::default().fg(level_color(&self.levels, val)));
             }
         }
     }
@@ -49,6 +49,11 @@ fn get_intensity_char(val: f32) -> &'static str {
     } else {
         " "
     }
+}
+
+fn level_color(levels: &[Color; 5], value: f32) -> Color {
+    let index = (value.clamp(0.0, 1.0) * (levels.len() - 1) as f32).round() as usize;
+    levels[index]
 }
 
 fn column_range(len: usize, column: usize, columns: usize) -> Option<std::ops::Range<usize>> {
@@ -75,7 +80,8 @@ fn average_column(data: &[f32], column: usize, columns: usize) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use super::{average_column, column_range};
+    use super::{average_column, column_range, level_color};
+    use ratatui::style::Color;
 
     #[test]
     fn column_range_handles_wide_terminals() {
@@ -92,5 +98,19 @@ mod tests {
 
         assert_eq!(average_column(&row, 0, 60), 0.2);
         assert_eq!(average_column(&row, 59, 60), 0.8);
+    }
+
+    #[test]
+    fn level_color_clamps_to_palette() {
+        let levels = [
+            Color::Black,
+            Color::Blue,
+            Color::Cyan,
+            Color::Yellow,
+            Color::White,
+        ];
+
+        assert_eq!(level_color(&levels, -1.0), Color::Black);
+        assert_eq!(level_color(&levels, 2.0), Color::White);
     }
 }

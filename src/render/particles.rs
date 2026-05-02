@@ -7,7 +7,7 @@ use ratatui::{
 
 pub struct ParticlesWidget<'a> {
     pub particles: &'a [Particle],
-    pub color: Color,
+    pub levels: [Color; 5],
 }
 
 impl<'a> Widget for ParticlesWidget<'a> {
@@ -33,8 +33,13 @@ impl<'a> Widget for ParticlesWidget<'a> {
 
                 buf.get_mut(x, y)
                     .set_symbol(symbol)
-                    .set_style(Style::default().fg(self.color));
+                    .set_style(Style::default().fg(level_color(&self.levels, p.life)));
             }
         }
     }
+}
+
+fn level_color(levels: &[Color; 5], value: f32) -> Color {
+    let index = (value.clamp(0.0, 1.0) * (levels.len() - 1) as f32).round() as usize;
+    levels[index]
 }

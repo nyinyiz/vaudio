@@ -7,7 +7,7 @@ use ratatui::{
 pub struct SpinnerWidget {
     pub angle: f32,
     pub rms: f32,
-    pub color: Color,
+    pub levels: [Color; 5],
 }
 
 impl Widget for SpinnerWidget {
@@ -39,11 +39,17 @@ impl Widget for SpinnerWidget {
                     && y >= area.top() as i16
                     && y < area.bottom() as i16
                 {
-                    buf.get_mut(x as u16, y as u16)
-                        .set_symbol("✸")
-                        .set_style(Style::default().fg(self.color));
+                    buf.get_mut(x as u16, y as u16).set_symbol("✸").set_style(
+                        Style::default()
+                            .fg(level_color(&self.levels, r_step as f32 / radius.max(1.0))),
+                    );
                 }
             }
         }
     }
+}
+
+fn level_color(levels: &[Color; 5], value: f32) -> Color {
+    let index = (value.clamp(0.0, 1.0) * (levels.len() - 1) as f32).round() as usize;
+    levels[index]
 }
