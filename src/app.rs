@@ -1,7 +1,12 @@
-use crate::render::ViewMode;
 use crate::render::rain::RainDrop;
+use crate::render::ViewMode;
 use crate::signal::{SignalProcessor, SoundType};
 use rand::Rng;
+use std::collections::VecDeque;
+
+const BEAT_HISTORY_LEN: usize = 43;
+const BEAT_MIN_HISTORY: usize = 16;
+const BEAT_COOLDOWN_FRAMES: u8 = 6;
 
 pub struct PulseRing {
     pub radius: f32,
@@ -21,24 +26,31 @@ pub struct App {
     pub sensitivity: f32,
     pub mirror: bool,
     pub no_color: bool,
-    
+
     // Audio State
     pub processor: SignalProcessor,
     pub fft_data: Vec<f32>,
     pub peaks: Vec<f32>,
     pub wave_data: Vec<f32>,
     pub rms: f32,
+    pub bass: f32,
+    pub mid: f32,
+    pub treble: f32,
+    pub beat: bool,
+    pub beat_intensity: f32,
     pub sound_type: SoundType,
-    
+
     // Mode State
     pub rain_drops: Vec<RainDrop>,
     pub pulse_rings: Vec<PulseRing>,
     pub spectrogram_history: Vec<Vec<f32>>,
     pub spinner_angle: f32,
     pub particles: Vec<Particle>,
-    
+
     // Smoothing factors
     pub smoothing: f32,
+    energy_history: VecDeque<f32>,
+    beat_cooldown: u8,
 }
 
 impl App {
@@ -54,6 +66,11 @@ impl App {
             peaks: vec![0.0; fft_size / 2],
             wave_data: vec![0.0; 512],
             rms: 0.0,
+            bass: 0.0,
+            mid: 0.0,
+            treble: 0.0,
+            beat: false,
+            beat_intensity: 0.0,
             sound_type: SoundType::Silence,
             rain_drops: Vec::new(),
             pulse_rings: Vec::new(),
@@ -61,16 +78,22 @@ impl App {
             spinner_angle: 0.0,
             particles: Vec::new(),
             smoothing: 0.7,
+            energy_history: VecDeque::with_capacity(BEAT_HISTORY_LEN),
+            beat_cooldown: 0,
         }
     }
 
     pub fn update_audio(&mut self, samples: &[f32], width: u16, height: u16) {
         let signal = self.processor.process(samples);
         self.sound_type = signal.sound_type;
-        
+
         // Update RMS with sensitivity
         self.rms = (signal.rms * self.sensitivity).min(1.0);
-        
+        self.bass = (signal.bass * self.sensitivity).min(1.0);
+        self.mid = (signal.mid * self.sensitivity).min(1.0);
+        self.treble = (signal.treble * self.sensitivity).min(1.0);
+        self.detect_beat(self.rms * 0.35 + self.bass * 0.65);
+
         // Update Wave (keep a rolling buffer)
         self.wave_data.extend_from_slice(samples);
         if self.wave_data.len() > 1024 {
@@ -80,10 +103,12 @@ impl App {
 
         // Update FFT with smoothing and sensitivity
         for (i, &new_val) in signal.fft.iter().enumerate() {
-            if i >= self.fft_data.len() { break; }
+            if i >= self.fft_data.len() {
+                break;
+            }
             let val = (new_val * self.sensitivity).min(1.0);
             self.fft_data[i] = self.fft_data[i] * self.smoothing + val * (1.0 - self.smoothing);
-            
+
             // Peak decay
             if self.fft_data[i] > self.peaks[i] {
                 self.peaks[i] = self.fft_data[i];
@@ -102,9 +127,14 @@ impl App {
 
     fn update_rain(&mut self, width: u16, height: u16) {
         let mut rng = rand::thread_rng();
-        
+
         // Higher spawn rate and use actual terminal width
-        let spawn_chance = (self.rms * 3.0).clamp(0.05, 0.9);
+        let beat_boost = if self.beat {
+            self.beat_intensity * 0.35
+        } else {
+            0.0
+        };
+        let spawn_chance = (self.rms * 2.0 + beat_boost).clamp(0.03, 0.9);
         if width > 0 && rng.gen_bool(spawn_chance as f64) {
             let x = rng.gen_range(0..width);
             self.rain_drops.push(RainDrop {
@@ -112,7 +142,9 @@ impl App {
                 y: 0.0,
                 speed: rng.gen_range(0.2..0.6) + self.rms * 1.0,
                 length: rng.gen_range(5..15),
-                chars: (0..20).map(|_| rng.gen_range(33..126) as u8 as char).collect(),
+                chars: (0..20)
+                    .map(|_| rng.gen_range(33..126) as u8 as char)
+                    .collect(),
             });
         }
 
@@ -124,11 +156,11 @@ impl App {
     }
 
     fn update_pulse(&mut self) {
-        // Spawn a new ring if RMS is high enough
-        if self.rms > 0.05 {
+        // Spawn a new ring on transients instead of every loud frame.
+        if self.beat {
             self.pulse_rings.push(PulseRing {
                 radius: 0.0,
-                intensity: self.rms,
+                intensity: self.beat_intensity.max(self.rms),
             });
         }
 
@@ -142,7 +174,7 @@ impl App {
     fn update_spectrogram(&mut self, height: u16) {
         // Save current FFT to history
         self.spectrogram_history.insert(0, self.fft_data.clone());
-        
+
         // Limit history to terminal height
         if self.spectrogram_history.len() > height as usize {
             self.spectrogram_history.truncate(height as usize);
@@ -151,7 +183,12 @@ impl App {
 
     fn update_spinner(&mut self) {
         // Speed up based on RMS
-        self.spinner_angle += 0.05 + self.rms * 0.2;
+        let beat_kick = if self.beat {
+            self.beat_intensity * 0.25
+        } else {
+            0.0
+        };
+        self.spinner_angle += 0.05 + self.rms * 0.15 + beat_kick;
         if self.spinner_angle > std::f32::consts::TAU {
             self.spinner_angle -= std::f32::consts::TAU;
         }
@@ -159,13 +196,13 @@ impl App {
 
     fn update_particles(&mut self, width: u16, height: u16) {
         let mut rng = rand::thread_rng();
-        
-        // Spawn particles on high RMS
-        if self.rms > 0.05 {
-            let num_new = (self.rms * 30.0) as usize;
+
+        // Spawn particles as distinct bursts on beat transients.
+        if self.beat {
+            let num_new = (10.0 + self.beat_intensity * 50.0) as usize;
             for _ in 0..num_new {
                 let angle = rng.gen_range(0.0..std::f32::consts::TAU);
-                let speed = rng.gen_range(0.2..1.5) + self.rms * 2.0;
+                let speed = rng.gen_range(0.2..1.5) + self.beat_intensity * 2.0;
                 self.particles.push(Particle {
                     x: width as f32 / 2.0,
                     y: height as f32 / 2.0,
@@ -182,7 +219,13 @@ impl App {
             p.y += p.vy;
             p.life -= 0.01; // Slower aging
         }
-        self.particles.retain(|p| p.life > 0.0 && p.x >= -10.0 && p.x < width as f32 + 10.0 && p.y >= -10.0 && p.y < height as f32 + 10.0);
+        self.particles.retain(|p| {
+            p.life > 0.0
+                && p.x >= -10.0
+                && p.x < width as f32 + 10.0
+                && p.y >= -10.0
+                && p.y < height as f32 + 10.0
+        });
     }
 
     pub fn set_mode(&mut self, mode: ViewMode) {
@@ -191,5 +234,67 @@ impl App {
 
     pub fn adjust_sensitivity(&mut self, delta: f32) {
         self.sensitivity = (self.sensitivity + delta).max(0.1).min(10.0);
+    }
+
+    fn detect_beat(&mut self, energy: f32) {
+        let avg_energy = if self.energy_history.is_empty() {
+            0.0
+        } else {
+            self.energy_history.iter().sum::<f32>() / self.energy_history.len() as f32
+        };
+        let threshold = avg_energy * 1.45 + 0.03;
+
+        self.beat = self.energy_history.len() >= BEAT_MIN_HISTORY
+            && self.beat_cooldown == 0
+            && energy > threshold
+            && energy > 0.05;
+        self.beat_intensity = if self.beat {
+            (energy / threshold).clamp(0.0, 2.0) / 2.0
+        } else {
+            0.0
+        };
+
+        if self.beat {
+            self.beat_cooldown = BEAT_COOLDOWN_FRAMES;
+        } else {
+            self.beat_cooldown = self.beat_cooldown.saturating_sub(1);
+        }
+
+        self.energy_history.push_back(energy);
+        if self.energy_history.len() > BEAT_HISTORY_LEN {
+            self.energy_history.pop_front();
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{App, ViewMode, BEAT_COOLDOWN_FRAMES};
+
+    #[test]
+    fn detect_beat_triggers_on_energy_spikes() {
+        let mut app = App::new(ViewMode::Bars, 1.0, false, false);
+        for _ in 0..20 {
+            app.detect_beat(0.08);
+        }
+
+        app.detect_beat(0.28);
+
+        assert!(app.beat);
+        assert!(app.beat_intensity > 0.0);
+    }
+
+    #[test]
+    fn detect_beat_uses_cooldown_between_spikes() {
+        let mut app = App::new(ViewMode::Bars, 1.0, false, false);
+        for _ in 0..20 {
+            app.detect_beat(0.08);
+        }
+
+        app.detect_beat(0.28);
+        assert_eq!(app.beat_cooldown, BEAT_COOLDOWN_FRAMES);
+
+        app.detect_beat(0.28);
+        assert!(!app.beat);
     }
 }

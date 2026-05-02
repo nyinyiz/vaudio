@@ -295,12 +295,16 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
     // Render the help bar at the bottom
     let mode_str = format!("{:?}", app.mode).to_uppercase();
     let sound_str = format!("{:?}", app.sound_type).to_uppercase();
+    let beat_str = if app.beat { "YES" } else { "NO" };
     let help_text = vec![Line::from(vec![
         Span::styled(" MODE: ", Style::default().add_modifier(Modifier::BOLD)),
         Span::styled(mode_str, Style::default().fg(Color::Yellow)),
         Span::raw(" | "),
         Span::styled(" DETECTED: ", Style::default().add_modifier(Modifier::BOLD)),
         Span::styled(sound_str, Style::default().fg(Color::Cyan)),
+        Span::raw(" | "),
+        Span::styled(" BEAT: ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(beat_str, Style::default().fg(Color::Magenta)),
         Span::raw(" | "),
         Span::styled(" SENS: ", Style::default().add_modifier(Modifier::BOLD)),
         Span::styled(
