@@ -18,29 +18,10 @@ impl<'a> Widget for BarsWidget<'a> {
         }
 
         let num_bars = area.width as usize;
-        let bin_size = self.data.len() / num_bars;
 
         for i in 0..num_bars {
-            let start = i * bin_size;
-            let end = (i + 1) * bin_size;
-            let val = if start < self.data.len() {
-                self.data[start..end.min(self.data.len())]
-                    .iter()
-                    .sum::<f32>()
-                    / (end - start) as f32
-            } else {
-                0.0
-            };
-
-            let peak_val = if start < self.peaks.len() {
-                self.peaks[start..end.min(self.peaks.len())]
-                    .iter()
-                    .max_by(|a, b| a.partial_cmp(b).unwrap())
-                    .cloned()
-                    .unwrap_or(0.0)
-            } else {
-                0.0
-            };
+            let val = average_column(self.data, i, num_bars);
+            let peak_val = max_column(self.peaks, i, num_bars);
 
             let bar_height = (val * area.height as f32).round() as u16;
             let peak_height = (peak_val * area.height as f32).round() as u16;
@@ -70,4 +51,64 @@ impl<'a> Widget for BarsWidget<'a> {
 
 fn get_block_char(_y: u16, _max: u16) -> &'static str {
     "█"
+}
+
+fn column_range(len: usize, column: usize, columns: usize) -> Option<std::ops::Range<usize>> {
+    if len == 0 || columns == 0 || column >= columns {
+        return None;
+    }
+
+    let start = column * len / columns;
+    let mut end = (column + 1) * len / columns;
+    if end <= start {
+        end = start + 1;
+    }
+
+    Some(start.min(len)..end.min(len))
+}
+
+fn average_column(data: &[f32], column: usize, columns: usize) -> f32 {
+    let Some(range) = column_range(data.len(), column, columns) else {
+        return 0.0;
+    };
+
+    data[range.clone()].iter().sum::<f32>() / range.len() as f32
+}
+
+fn max_column(data: &[f32], column: usize, columns: usize) -> f32 {
+    let Some(range) = column_range(data.len(), column, columns) else {
+        return 0.0;
+    };
+
+    data[range].iter().copied().reduce(f32::max).unwrap_or(0.0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{average_column, column_range, max_column};
+
+    #[test]
+    fn column_range_never_returns_empty_ranges_for_wide_terminals() {
+        for column in 0..120 {
+            let range = column_range(8, column, 120).unwrap();
+            assert!(!range.is_empty());
+            assert!(range.end <= 8);
+        }
+    }
+
+    #[test]
+    fn average_column_handles_more_columns_than_data_points() {
+        let data = [0.25, 0.5];
+
+        assert_eq!(average_column(&data, 0, 80), 0.25);
+        assert_eq!(average_column(&data, 79, 80), 0.5);
+    }
+
+    #[test]
+    fn max_column_uses_the_proportional_bucket() {
+        let data = [0.1, 0.7, 0.2, 0.4];
+
+        assert_eq!(max_column(&data, 0, 2), 0.7);
+        assert_eq!(max_column(&data, 1, 2), 0.4);
+    }
 }
