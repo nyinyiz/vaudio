@@ -30,6 +30,7 @@ pub struct App {
     pub no_color: bool,
     pub theme: Theme,
     pub auto_mode: ViewMode,
+    pub last_manual_mode: ViewMode,
 
     // Audio State
     pub processor: SignalProcessor,
@@ -74,6 +75,11 @@ impl App {
             no_color,
             theme,
             auto_mode: ViewMode::Spinner,
+            last_manual_mode: if mode == ViewMode::Auto {
+                ViewMode::Bars
+            } else {
+                mode
+            },
             processor: SignalProcessor::new(fft_size),
             fft_data: vec![0.0; fft_size / 2],
             peaks: vec![0.0; fft_size / 2],
@@ -244,7 +250,19 @@ impl App {
     }
 
     pub fn set_mode(&mut self, mode: ViewMode) {
+        if mode != ViewMode::Auto {
+            self.last_manual_mode = mode;
+        }
         self.mode = mode;
+    }
+
+    pub fn toggle_auto_manual(&mut self) {
+        if self.mode == ViewMode::Auto {
+            self.mode = self.last_manual_mode;
+        } else {
+            self.last_manual_mode = self.mode;
+            self.mode = ViewMode::Auto;
+        }
     }
 
     pub fn active_mode(&self) -> ViewMode {
@@ -384,6 +402,29 @@ mod tests {
 
         app.set_mode(ViewMode::Auto);
         assert_eq!(app.active_mode(), ViewMode::Particles);
+    }
+
+    #[test]
+    fn toggle_auto_manual_returns_to_last_manual_mode() {
+        let mut app = App::new(ViewMode::Bars, 1.0, false, false, Theme::Neon);
+        app.set_mode(ViewMode::Spectrogram);
+
+        app.toggle_auto_manual();
+        assert_eq!(app.mode, ViewMode::Auto);
+
+        app.toggle_auto_manual();
+        assert_eq!(app.mode, ViewMode::Spectrogram);
+    }
+
+    #[test]
+    fn numeric_modes_update_last_manual_mode() {
+        let mut app = App::new(ViewMode::Auto, 1.0, false, false, Theme::Neon);
+
+        app.set_mode(ViewMode::Rain);
+        app.toggle_auto_manual();
+        app.toggle_auto_manual();
+
+        assert_eq!(app.mode, ViewMode::Rain);
     }
 
     #[test]

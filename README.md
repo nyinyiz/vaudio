@@ -80,6 +80,7 @@ vaudio [OPTIONS]
 - `6`: Switch to **Spinner** mode
 - `7`: Switch to **Particles** mode
 - `8`: Switch to **Auto** mode
+- `m`: Toggle between **Auto** and the last manual mode
 - `t`: Cycle color theme
 - `+`: Increase sensitivity
 - `-`: Decrease sensitivity
@@ -117,7 +118,7 @@ These are terminal mock screenshots showing the intended output format. They are
 ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
   AUTO > BARS  NEON        VOL [########--]  B [####-] M [###--] T [##---]     MUSIC  BEAT  SENS 8.4
-                         [1-8] modes   [t] theme   [+/-] sensitivity   [q] quit
+                  [1-8] modes   [t] theme   [m] auto/manual   [+/-] sensitivity   [q] quit
 ```
 
 ### Auto Mode: Beat Burst
@@ -129,7 +130,7 @@ These are terminal mock screenshots showing the intended output format. They are
                  *        +      *   *      +        *
         .             +       *       *       +             .
   AUTO > PARTICLES  FIRE     VOL [#########-]  B [#####] M [###--] T [##---]     MUSIC  BEAT  SENS 9.2
-                         [1-8] modes   [t] theme   [+/-] sensitivity   [q] quit
+                  [1-8] modes   [t] theme   [m] auto/manual   [+/-] sensitivity   [q] quit
 ```
 
 ### Auto Mode: Voice
@@ -141,7 +142,7 @@ These are terminal mock screenshots showing the intended output format. They are
              ┃┃┃┃┃┃┃┃┃┃┃  ┃┃┃┃┃┃┃┃┃┃┃    ┃┃┃┃┃┃┃┃┃
                  ┃┃┃┃┃       ┃┃┃┃┃┃          ┃┃┃┃
   AUTO > WAVE  ICE          VOL [#####-----]  B [#----] M [####-] T [##---]     VOICE  ----  SENS 7.6
-                         [1-8] modes   [t] theme   [+/-] sensitivity   [q] quit
+                  [1-8] modes   [t] theme   [m] auto/manual   [+/-] sensitivity   [q] quit
 ```
 
 ## Tech Stack
