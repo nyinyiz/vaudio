@@ -15,7 +15,7 @@ use crossterm::{
 };
 use ratatui::{
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout},
+    layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::Paragraph,
@@ -230,7 +230,7 @@ fn run_app<B: ratatui::backend::Backend>(
 fn ui(f: &mut ratatui::Frame, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(0), Constraint::Length(1)])
+        .constraints([Constraint::Min(0), Constraint::Length(2)])
         .split(f.size());
 
     let area = chunks[0];
@@ -311,35 +311,113 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
         }
     }
 
-    // Render the help bar at the bottom
+    // Render the HUD at the bottom
+    let hud_rows = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(1), Constraint::Length(1)])
+        .split(help_area);
+    let hud_top = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(30),
+            Constraint::Percentage(40),
+            Constraint::Percentage(30),
+        ])
+        .split(hud_rows[0]);
+
     let mode_str = format!("{:?}", app.mode).to_uppercase();
     let theme_str = format!("{:?}", app.theme).to_uppercase();
     let sound_str = format!("{:?}", app.sound_type).to_uppercase();
-    let beat_str = if app.beat { "YES" } else { "NO" };
-    let help_text = vec![Line::from(vec![
-        Span::styled(" MODE: ", Style::default().add_modifier(Modifier::BOLD)),
+    let beat_str = if app.beat { "BEAT" } else { "----" };
+    let hud_style = Style::default().bg(palette.help_bg).fg(palette.help_fg);
+
+    let identity = Paragraph::new(Line::from(vec![
+        Span::raw(" "),
         Span::styled(mode_str, Style::default().fg(palette.peak)),
-        Span::raw(" | "),
-        Span::styled(" THEME: ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::raw("  "),
         Span::styled(theme_str, Style::default().fg(palette.accent)),
-        Span::raw(" | "),
-        Span::styled(" DETECTED: ", Style::default().add_modifier(Modifier::BOLD)),
+    ]))
+    .style(hud_style);
+    f.render_widget(identity, hud_top[0]);
+
+    let levels = Paragraph::new(Line::from(vec![
+        Span::styled("VOL ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(
+            level_meter(app.rms, 10),
+            Style::default().fg(palette.level(app.rms)),
+        ),
+        Span::raw("  "),
+        Span::styled("B ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(
+            level_meter(app.bass, 5),
+            Style::default().fg(palette.level(app.bass)),
+        ),
+        Span::raw(" "),
+        Span::styled("M ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(
+            level_meter(app.mid, 5),
+            Style::default().fg(palette.level(app.mid)),
+        ),
+        Span::raw(" "),
+        Span::styled("T ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(
+            level_meter(app.treble, 5),
+            Style::default().fg(palette.level(app.treble)),
+        ),
+    ]))
+    .alignment(Alignment::Center)
+    .style(hud_style);
+    f.render_widget(levels, hud_top[1]);
+
+    let detection = Paragraph::new(Line::from(vec![
         Span::styled(sound_str, Style::default().fg(palette.accent)),
-        Span::raw(" | "),
-        Span::styled(" BEAT: ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::raw("  "),
         Span::styled(beat_str, Style::default().fg(palette.primary)),
-        Span::raw(" | "),
-        Span::styled(" SENS: ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::raw("  "),
+        Span::styled("SENS ", Style::default().add_modifier(Modifier::BOLD)),
         Span::styled(
             format!("{:.1}", app.sensitivity),
             Style::default().fg(palette.peak),
         ),
-        Span::raw(" | "),
-        Span::styled(" KEYS: ", Style::default().add_modifier(Modifier::BOLD)),
-        Span::raw("[1-7] Modes [t] Theme [+/-] Sens [q] Quit"),
-    ])];
+        Span::raw(" "),
+    ]))
+    .alignment(Alignment::Right)
+    .style(hud_style);
+    f.render_widget(detection, hud_top[2]);
 
-    let help_bar =
-        Paragraph::new(help_text).style(Style::default().bg(palette.help_bg).fg(palette.help_fg));
-    f.render_widget(help_bar, help_area);
+    let controls = Paragraph::new(Line::from(vec![
+        Span::styled("[1-7]", Style::default().fg(palette.peak)),
+        Span::raw(" modes   "),
+        Span::styled("[t]", Style::default().fg(palette.peak)),
+        Span::raw(" theme   "),
+        Span::styled("[+/-]", Style::default().fg(palette.peak)),
+        Span::raw(" sensitivity   "),
+        Span::styled("[q]", Style::default().fg(palette.peak)),
+        Span::raw(" quit"),
+    ]))
+    .alignment(Alignment::Center)
+    .style(hud_style);
+    f.render_widget(controls, hud_rows[1]);
+}
+
+fn level_meter(value: f32, width: usize) -> String {
+    let filled = (value.clamp(0.0, 1.0) * width as f32).round() as usize;
+    let empty = width.saturating_sub(filled);
+    format!("[{}{}]", "#".repeat(filled), "-".repeat(empty))
+}
+
+#[cfg(test)]
+mod hud_tests {
+    use super::level_meter;
+
+    #[test]
+    fn level_meter_clamps_values() {
+        assert_eq!(level_meter(-1.0, 4), "[----]");
+        assert_eq!(level_meter(2.0, 4), "[####]");
+    }
+
+    #[test]
+    fn level_meter_renders_partial_values() {
+        assert_eq!(level_meter(0.5, 6), "[###---]");
+    }
 }
