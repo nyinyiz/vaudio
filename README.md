@@ -61,7 +61,7 @@ vaudio [OPTIONS]
 ```
 
 ### CLI Options
-- `--mode <bars|wave|rain|pulse|spectrogram|spinner|particles>`: Set initial visualization mode (default: `bars`).
+- `--mode <auto|bars|wave|rain|pulse|spectrogram|spinner|particles>`: Set initial visualization mode (default: `bars`).
 - `--fps <number>`: Target frames per second (default: `30`).
 - `--sensitivity <number>`: Audio sensitivity multiplier (default: `10.0`).
 - `--device <name>`: Specify input device name or index.
@@ -79,18 +79,70 @@ vaudio [OPTIONS]
 - `5`: Switch to **Spectrogram** mode
 - `6`: Switch to **Spinner** mode
 - `7`: Switch to **Particles** mode
+- `8`: Switch to **Auto** mode
 - `t`: Cycle color theme
 - `+`: Increase sensitivity
 - `-`: Decrease sensitivity
 
 ## Visual Modes
-1. **Bars**: A classic frequency spectrum equalizer with peak-hold decay.
-2. **Wave**: A scrolling real-time waveform of the raw audio signal.
-3. **Rain**: A "Matrix" style falling character effect.
-4. **Pulse**: Concentric expanding shockwaves driven by audio volume.
-5. **Spectrogram**: A waterfall heatmap of frequency history scrolling downwards.
-6. **Spinner**: A rotating starburst that speeds up and expands with the beat.
-7. **Particles**: A fireworks-like explosion of characters flying from the center.
+1. **Auto**: Selects the best visualizer from live audio state.
+2. **Bars**: A classic frequency spectrum equalizer with peak-hold decay.
+3. **Wave**: A scrolling real-time waveform of the raw audio signal.
+4. **Rain**: A "Matrix" style falling character effect.
+5. **Pulse**: Concentric expanding shockwaves driven by audio volume.
+6. **Spectrogram**: A waterfall heatmap of frequency history scrolling downwards.
+7. **Spinner**: A rotating starburst that speeds up and expands with the beat.
+8. **Particles**: A fireworks-like explosion of characters flying from the center.
+
+### Auto Mode
+Auto mode watches the live signal classification, beat detector, and bass/mid/treble levels to select an active visualizer:
+
+- **Silence / low input**: Spinner
+- **Voice-heavy input**: Wave or Pulse
+- **Music / bass-heavy input**: Bars
+- **Treble-heavy music**: Spectrogram
+- **Noise / wide-band input**: Rain
+- **Beat spikes**: Pulse or Particles
+
+The HUD shows both the selected mode and Auto's current target, for example `AUTO > BARS`.
+
+## Terminal Previews
+These are terminal mock screenshots showing the intended output format. They are not captured from a specific microphone session, but they match the current layout and HUD structure.
+
+### Auto Mode: Music
+```text
+████████████████████████████████████████████████████████████████████████████████
+████████████████████████████████████████████████████████████████████████████████
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+  AUTO > BARS  NEON        VOL [########--]  B [####-] M [###--] T [##---]     MUSIC  BEAT  SENS 8.4
+                         [1-8] modes   [t] theme   [+/-] sensitivity   [q] quit
+```
+
+### Auto Mode: Beat Burst
+```text
+                  *             +             *                  +
+        +                 *             *              + 
+             .      *          +     *       +      .          *
+                     +       *     *     *       +
+                 *        +      *   *      +        *
+        .             +       *       *       +             .
+  AUTO > PARTICLES  FIRE     VOL [#########-]  B [#####] M [###--] T [##---]     MUSIC  BEAT  SENS 9.2
+                         [1-8] modes   [t] theme   [+/-] sensitivity   [q] quit
+```
+
+### Auto Mode: Voice
+```text
+────────────────────────────────────────────────────────────────────────────────
+                 ┃┃┃┃┃       ┃┃┃┃┃┃          ┃┃┃┃
+             ┃┃┃┃┃┃┃┃┃┃┃  ┃┃┃┃┃┃┃┃┃┃┃    ┃┃┃┃┃┃┃┃┃
+         ┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃┃
+             ┃┃┃┃┃┃┃┃┃┃┃  ┃┃┃┃┃┃┃┃┃┃┃    ┃┃┃┃┃┃┃┃┃
+                 ┃┃┃┃┃       ┃┃┃┃┃┃          ┃┃┃┃
+  AUTO > WAVE  ICE          VOL [#####-----]  B [#----] M [####-] T [##---]     VOICE  ----  SENS 7.6
+                         [1-8] modes   [t] theme   [+/-] sensitivity   [q] quit
+```
 
 ## Tech Stack
 - **ratatui**: A powerful library for building terminal user interfaces.
