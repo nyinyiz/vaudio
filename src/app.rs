@@ -8,6 +8,7 @@ use std::collections::VecDeque;
 const BEAT_HISTORY_LEN: usize = 43;
 const BEAT_MIN_HISTORY: usize = 16;
 const BEAT_COOLDOWN_FRAMES: u8 = 6;
+const AUTO_SWITCH_COOLDOWN_FRAMES: u8 = 18;
 
 pub struct PulseRing {
     pub radius: f32,
@@ -28,6 +29,7 @@ pub struct App {
     pub mirror: bool,
     pub no_color: bool,
     pub theme: Theme,
+    pub auto_mode: ViewMode,
 
     // Audio State
     pub processor: SignalProcessor,
@@ -53,6 +55,7 @@ pub struct App {
     pub smoothing: f32,
     energy_history: VecDeque<f32>,
     beat_cooldown: u8,
+    auto_switch_cooldown: u8,
 }
 
 impl App {
@@ -70,6 +73,7 @@ impl App {
             mirror,
             no_color,
             theme,
+            auto_mode: ViewMode::Spinner,
             processor: SignalProcessor::new(fft_size),
             fft_data: vec![0.0; fft_size / 2],
             peaks: vec![0.0; fft_size / 2],
@@ -89,6 +93,7 @@ impl App {
             smoothing: 0.7,
             energy_history: VecDeque::with_capacity(BEAT_HISTORY_LEN),
             beat_cooldown: 0,
+            auto_switch_cooldown: 0,
         }
     }
 
@@ -102,6 +107,7 @@ impl App {
         self.mid = (signal.mid * self.sensitivity).min(1.0);
         self.treble = (signal.treble * self.sensitivity).min(1.0);
         self.detect_beat(self.rms * 0.35 + self.bass * 0.65);
+        self.update_auto_mode();
 
         // Update Wave (keep a rolling buffer)
         self.wave_data.extend_from_slice(samples);
@@ -241,6 +247,14 @@ impl App {
         self.mode = mode;
     }
 
+    pub fn active_mode(&self) -> ViewMode {
+        if self.mode == ViewMode::Auto {
+            self.auto_mode
+        } else {
+            self.mode
+        }
+    }
+
     pub fn adjust_sensitivity(&mut self, delta: f32) {
         self.sensitivity = (self.sensitivity + delta).max(0.1).min(10.0);
     }
@@ -278,11 +292,62 @@ impl App {
             self.energy_history.pop_front();
         }
     }
+
+    fn update_auto_mode(&mut self) {
+        if self.mode != ViewMode::Auto {
+            self.auto_switch_cooldown = self.auto_switch_cooldown.saturating_sub(1);
+            return;
+        }
+
+        let target = self.choose_auto_mode();
+        let should_switch =
+            target != self.auto_mode && (self.auto_switch_cooldown == 0 || self.beat);
+
+        if should_switch {
+            self.auto_mode = target;
+            self.auto_switch_cooldown = AUTO_SWITCH_COOLDOWN_FRAMES;
+        } else {
+            self.auto_switch_cooldown = self.auto_switch_cooldown.saturating_sub(1);
+        }
+    }
+
+    fn choose_auto_mode(&self) -> ViewMode {
+        if self.beat {
+            return if self.beat_intensity > 0.45 {
+                ViewMode::Particles
+            } else {
+                ViewMode::Pulse
+            };
+        }
+
+        if self.rms < 0.03 || self.sound_type == SoundType::Silence {
+            return ViewMode::Spinner;
+        }
+
+        match self.sound_type {
+            SoundType::Voice => {
+                if self.mid > self.bass * 1.2 {
+                    ViewMode::Wave
+                } else {
+                    ViewMode::Pulse
+                }
+            }
+            SoundType::Noise => ViewMode::Rain,
+            SoundType::Music => {
+                if self.treble > self.bass * 1.15 {
+                    ViewMode::Spectrogram
+                } else {
+                    ViewMode::Bars
+                }
+            }
+            SoundType::Silence => ViewMode::Spinner,
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{App, Theme, ViewMode, BEAT_COOLDOWN_FRAMES};
+    use super::{App, SoundType, Theme, ViewMode, BEAT_COOLDOWN_FRAMES};
 
     #[test]
     fn detect_beat_triggers_on_energy_spikes() {
@@ -309,5 +374,51 @@ mod tests {
 
         app.detect_beat(0.28);
         assert!(!app.beat);
+    }
+
+    #[test]
+    fn active_mode_uses_auto_selection_only_in_auto_mode() {
+        let mut app = App::new(ViewMode::Bars, 1.0, false, false, Theme::Neon);
+        app.auto_mode = ViewMode::Particles;
+        assert_eq!(app.active_mode(), ViewMode::Bars);
+
+        app.set_mode(ViewMode::Auto);
+        assert_eq!(app.active_mode(), ViewMode::Particles);
+    }
+
+    #[test]
+    fn auto_mode_selects_spinner_for_silence() {
+        let mut app = App::new(ViewMode::Auto, 1.0, false, false, Theme::Neon);
+        app.rms = 0.0;
+        app.sound_type = SoundType::Silence;
+
+        app.update_auto_mode();
+
+        assert_eq!(app.auto_mode, ViewMode::Spinner);
+    }
+
+    #[test]
+    fn auto_mode_selects_particles_for_strong_beats() {
+        let mut app = App::new(ViewMode::Auto, 1.0, false, false, Theme::Neon);
+        app.rms = 0.8;
+        app.beat = true;
+        app.beat_intensity = 0.9;
+
+        app.update_auto_mode();
+
+        assert_eq!(app.auto_mode, ViewMode::Particles);
+    }
+
+    #[test]
+    fn auto_mode_selects_bars_for_bass_heavy_music() {
+        let mut app = App::new(ViewMode::Auto, 1.0, false, false, Theme::Neon);
+        app.rms = 0.3;
+        app.bass = 0.6;
+        app.treble = 0.2;
+        app.sound_type = SoundType::Music;
+
+        app.update_auto_mode();
+
+        assert_eq!(app.auto_mode, ViewMode::Bars);
     }
 }

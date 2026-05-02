@@ -10,6 +10,7 @@ pub mod wave;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum ViewMode {
+    Auto,
     Wave,
     Bars,
     Rain,

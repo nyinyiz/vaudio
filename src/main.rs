@@ -144,6 +144,7 @@ fn main() -> Result<()> {
 impl std::fmt::Display for ViewMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mode = match self {
+            ViewMode::Auto => "auto",
             ViewMode::Wave => "wave",
             ViewMode::Bars => "bars",
             ViewMode::Rain => "rain",
@@ -165,6 +166,13 @@ mod tests {
         let args = Args::try_parse_from(["vaudio", "--mode", "spectrogram"]).unwrap();
 
         assert_eq!(args.mode, ViewMode::Spectrogram);
+    }
+
+    #[test]
+    fn parses_auto_mode() {
+        let args = Args::try_parse_from(["vaudio", "--mode", "auto"]).unwrap();
+
+        assert_eq!(args.mode, ViewMode::Auto);
     }
 
     #[test]
@@ -207,6 +215,7 @@ fn run_app<B: ratatui::backend::Backend>(
                     KeyCode::Char('5') => app.set_mode(ViewMode::Spectrogram),
                     KeyCode::Char('6') => app.set_mode(ViewMode::Spinner),
                     KeyCode::Char('7') => app.set_mode(ViewMode::Particles),
+                    KeyCode::Char('8') => app.set_mode(ViewMode::Auto),
                     KeyCode::Char('+') => app.adjust_sensitivity(0.2),
                     KeyCode::Char('-') => app.adjust_sensitivity(-0.2),
                     KeyCode::Char('t') => app.cycle_theme(),
@@ -239,7 +248,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
     let palette = app.theme.palette(app.no_color);
 
     // Render the visualizer in the main area
-    match app.mode {
+    match app.active_mode() {
         ViewMode::Bars => {
             f.render_widget(
                 BarsWidget {
@@ -290,7 +299,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
                 area,
             );
         }
-        ViewMode::Spinner => {
+        ViewMode::Auto | ViewMode::Spinner => {
             f.render_widget(
                 SpinnerWidget {
                     angle: app.spinner_angle,
@@ -325,7 +334,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
         ])
         .split(hud_rows[0]);
 
-    let mode_str = format!("{:?}", app.mode).to_uppercase();
+    let mode_str = mode_label(app);
     let theme_str = format!("{:?}", app.theme).to_uppercase();
     let sound_str = format!("{:?}", app.sound_type).to_uppercase();
     let beat_str = if app.beat { "BEAT" } else { "----" };
@@ -386,7 +395,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
     f.render_widget(detection, hud_top[2]);
 
     let controls = Paragraph::new(Line::from(vec![
-        Span::styled("[1-7]", Style::default().fg(palette.peak)),
+        Span::styled("[1-8]", Style::default().fg(palette.peak)),
         Span::raw(" modes   "),
         Span::styled("[t]", Style::default().fg(palette.peak)),
         Span::raw(" theme   "),
@@ -406,9 +415,17 @@ fn level_meter(value: f32, width: usize) -> String {
     format!("[{}{}]", "#".repeat(filled), "-".repeat(empty))
 }
 
+fn mode_label(app: &App) -> String {
+    if app.mode == ViewMode::Auto {
+        format!("AUTO > {:?}", app.auto_mode).to_uppercase()
+    } else {
+        format!("{:?}", app.mode).to_uppercase()
+    }
+}
+
 #[cfg(test)]
 mod hud_tests {
-    use super::level_meter;
+    use super::{level_meter, mode_label, App, Theme, ViewMode};
 
     #[test]
     fn level_meter_clamps_values() {
@@ -419,5 +436,13 @@ mod hud_tests {
     #[test]
     fn level_meter_renders_partial_values() {
         assert_eq!(level_meter(0.5, 6), "[###---]");
+    }
+
+    #[test]
+    fn mode_label_shows_auto_target() {
+        let mut app = App::new(ViewMode::Auto, 1.0, false, false, Theme::Neon);
+        app.auto_mode = ViewMode::Spectrogram;
+
+        assert_eq!(mode_label(&app), "AUTO > SPECTROGRAM");
     }
 }
