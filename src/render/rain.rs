@@ -33,7 +33,7 @@ impl<'a> Widget for RainWidget<'a> {
                 if y >= 0 && y < area.height as i32 {
                     let char_idx = (i + drop.y as usize) % drop.chars.len();
                     let c = drop.chars[char_idx];
-                    
+
                     let _alpha = 1.0 - (i as f32 / drop.length as f32);
                     let final_color = if i == 0 {
                         Color::White // Lead character

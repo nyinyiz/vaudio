@@ -1,9 +1,9 @@
+use crate::app::Particle;
 use ratatui::{
     layout::Rect,
     style::{Color, Style},
     widgets::Widget,
 };
-use crate::app::Particle;
 
 pub struct ParticlesWidget<'a> {
     pub particles: &'a [Particle],
@@ -21,10 +21,15 @@ impl<'a> Widget for ParticlesWidget<'a> {
             let y = p.y as u16;
 
             if x >= area.left() && x < area.right() && y >= area.top() && y < area.bottom() {
-                let symbol = if p.life > 0.8 { "*" }
-                            else if p.life > 0.5 { "+" }
-                            else if p.life > 0.2 { "." }
-                            else { " " };
+                let symbol = if p.life > 0.8 {
+                    "*"
+                } else if p.life > 0.5 {
+                    "+"
+                } else if p.life > 0.2 {
+                    "."
+                } else {
+                    " "
+                };
 
                 buf.get_mut(x, y)
                     .set_symbol(symbol)

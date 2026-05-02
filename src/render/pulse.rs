@@ -1,9 +1,9 @@
+use crate::app::PulseRing;
 use ratatui::{
     layout::Rect,
     style::{Color, Style},
     widgets::Widget,
 };
-use crate::app::PulseRing;
 
 pub struct PulseWidget<'a> {
     pub rings: &'a [PulseRing],
@@ -22,18 +22,24 @@ impl<'a> Widget for PulseWidget<'a> {
         for ring in self.rings {
             // Draw a crude circle/diamond using radius
             let r = ring.radius as i16;
-            if r <= 0 { continue; }
+            if r <= 0 {
+                continue;
+            }
 
             for dy in -r..=r {
                 for dx in -r..=r {
                     // Using Manhattan distance or Euclidean distance
                     let dist = ((dx * dx) as f32 + (dy * dy * 4) as f32).sqrt(); // 4x multiplier for aspect ratio
-                    if (dist - r as f32).abs() < 1.5 { // Increased thickness from 1.0 to 1.5
+                    if (dist - r as f32).abs() < 1.5 {
+                        // Increased thickness from 1.0 to 1.5
                         let x = center_x as i16 + dx;
                         let y = center_y as i16 + dy;
 
-                        if x >= area.left() as i16 && x < area.right() as i16 
-                           && y >= area.top() as i16 && y < area.bottom() as i16 {
+                        if x >= area.left() as i16
+                            && x < area.right() as i16
+                            && y >= area.top() as i16
+                            && y < area.bottom() as i16
+                        {
                             buf.get_mut(x as u16, y as u16)
                                 .set_symbol("∘")
                                 .set_style(Style::default().fg(self.color));

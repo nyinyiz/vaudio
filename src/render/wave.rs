@@ -21,7 +21,7 @@ impl<'a> Widget for WaveWidget<'a> {
         for x in 0..area.width {
             let idx = (x as f32 / area.width as f32 * self.samples.len() as f32) as usize;
             let sample = self.samples.get(idx).cloned().unwrap_or(0.0);
-            
+
             let offset = (sample * amplitude).round() as i16;
             let y = (mid_y as i16 + offset) as u16;
             let y = y.clamp(area.top(), area.bottom() - 1);
