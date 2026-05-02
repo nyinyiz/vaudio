@@ -10,10 +10,21 @@ impl AudioCapture {
     pub fn new(device_name: Option<String>, tx: SyncSender<Vec<f32>>) -> Result<Self> {
         let host = cpal::default_host();
 
-        let device = if let Some(name) = device_name {
-            host.input_devices()?
-                .find(|d| d.name().map(|n| n.contains(&name)).unwrap_or(false))
-                .ok_or_else(|| anyhow!("Could not find audio device containing '{}'", name))?
+        let device = if let Some(selector) = device_name {
+            let devices: Vec<_> = host.input_devices()?.collect();
+            if let Ok(index) = selector.parse::<usize>() {
+                devices
+                    .into_iter()
+                    .nth(index)
+                    .ok_or_else(|| anyhow!("Could not find audio device at index {}", index))?
+            } else {
+                devices
+                    .into_iter()
+                    .find(|d| d.name().map(|n| n.contains(&selector)).unwrap_or(false))
+                    .ok_or_else(|| {
+                        anyhow!("Could not find audio device containing '{}'", selector)
+                    })?
+            }
         } else {
             host.default_input_device()
                 .ok_or_else(|| anyhow!("No default input device found"))?

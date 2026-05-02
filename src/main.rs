@@ -21,14 +21,8 @@ use ratatui::{
     Terminal,
 };
 use render::{
-    bars::BarsWidget,
-    rain::RainWidget,
-    wave::WaveWidget,
-    pulse::PulseWidget,
-    spectrogram::SpectrogramWidget,
-    spinner::SpinnerWidget,
-    particles::ParticlesWidget,
-    ViewMode,
+    bars::BarsWidget, particles::ParticlesWidget, pulse::PulseWidget, rain::RainWidget,
+    spectrogram::SpectrogramWidget, spinner::SpinnerWidget, wave::WaveWidget, ViewMode,
 };
 use std::{
     io,
@@ -39,9 +33,9 @@ use std::{
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Visualization mode: wave, bars, rain
-    #[arg(short, long, default_value = "bars")]
-    mode: String,
+    /// Visualization mode
+    #[arg(short, long, value_enum, default_value_t = ViewMode::Bars)]
+    mode: ViewMode,
 
     /// Target frames per second
     #[arg(short, long, default_value_t = 30)]
@@ -64,7 +58,7 @@ struct Args {
     no_color: bool,
 
     /// Mirror the visualization
-    #[arg(short, long)]
+    #[arg(long)]
     mirror: bool,
 }
 
@@ -79,17 +73,6 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    let mode = match args.mode.as_str() {
-        "wave" => ViewMode::Wave,
-        "bars" => ViewMode::Bars,
-        "rain" => ViewMode::Rain,
-        "pulse" => ViewMode::Pulse,
-        "spectrogram" => ViewMode::Spectrogram,
-        "spinner" => ViewMode::Spinner,
-        "particles" => ViewMode::Particles,
-        _ => ViewMode::Bars,
-    };
-
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -101,7 +84,7 @@ fn main() -> Result<()> {
     let (tx, rx) = mpsc::sync_channel(10);
     let _capture = AudioCapture::new(args.device, tx)?;
 
-    let mut app = App::new(mode, args.sensitivity, args.mirror, args.no_color);
+    let mut app = App::new(args.mode, args.sensitivity, args.mirror, args.no_color);
     let tick_rate = Duration::from_secs_f32(1.0 / args.fps as f32);
 
     // Splash screen
@@ -113,7 +96,12 @@ fn main() -> Result<()> {
             let x = (area.width as i16 - text.len() as i16) / 2;
             let y = area.height / 2;
             if x >= 0 {
-                f.buffer_mut().set_string(x as u16, y, text, ratatui::style::Style::default().fg(Color::Green));
+                f.buffer_mut().set_string(
+                    x as u16,
+                    y,
+                    text,
+                    ratatui::style::Style::default().fg(Color::Green),
+                );
             }
         })?;
         if event::poll(Duration::from_millis(10))? {
@@ -139,6 +127,40 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+impl std::fmt::Display for ViewMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mode = match self {
+            ViewMode::Wave => "wave",
+            ViewMode::Bars => "bars",
+            ViewMode::Rain => "rain",
+            ViewMode::Pulse => "pulse",
+            ViewMode::Spectrogram => "spectrogram",
+            ViewMode::Spinner => "spinner",
+            ViewMode::Particles => "particles",
+        };
+        f.write_str(mode)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Args, Parser, ViewMode};
+
+    #[test]
+    fn parses_valid_mode_names() {
+        let args = Args::try_parse_from(["vaudio", "--mode", "spectrogram"]).unwrap();
+
+        assert_eq!(args.mode, ViewMode::Spectrogram);
+    }
+
+    #[test]
+    fn rejects_invalid_mode_names() {
+        let err = Args::try_parse_from(["vaudio", "--mode", "unknown"]).unwrap_err();
+
+        assert_eq!(err.kind(), clap::error::ErrorKind::InvalidValue);
+    }
 }
 
 fn run_app<B: ratatui::backend::Backend>(
@@ -273,23 +295,24 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
     // Render the help bar at the bottom
     let mode_str = format!("{:?}", app.mode).to_uppercase();
     let sound_str = format!("{:?}", app.sound_type).to_uppercase();
-    let help_text = vec![
-        Line::from(vec![
-            Span::styled(" MODE: ", Style::default().add_modifier(Modifier::BOLD)),
-            Span::styled(mode_str, Style::default().fg(Color::Yellow)),
-            Span::raw(" | "),
-            Span::styled(" DETECTED: ", Style::default().add_modifier(Modifier::BOLD)),
-            Span::styled(sound_str, Style::default().fg(Color::Cyan)),
-            Span::raw(" | "),
-            Span::styled(" SENS: ", Style::default().add_modifier(Modifier::BOLD)),
-            Span::styled(format!("{:.1}", app.sensitivity), Style::default().fg(Color::Yellow)),
-            Span::raw(" | "),
-            Span::styled(" KEYS: ", Style::default().add_modifier(Modifier::BOLD)),
-            Span::raw("[1-7] Modes [+/-] Adjust Sens [q] Quit"),
-        ])
-    ];
+    let help_text = vec![Line::from(vec![
+        Span::styled(" MODE: ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(mode_str, Style::default().fg(Color::Yellow)),
+        Span::raw(" | "),
+        Span::styled(" DETECTED: ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(sound_str, Style::default().fg(Color::Cyan)),
+        Span::raw(" | "),
+        Span::styled(" SENS: ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(
+            format!("{:.1}", app.sensitivity),
+            Style::default().fg(Color::Yellow),
+        ),
+        Span::raw(" | "),
+        Span::styled(" KEYS: ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::raw("[1-7] Modes [+/-] Adjust Sens [q] Quit"),
+    ])];
 
-    let help_bar = Paragraph::new(help_text)
-        .style(Style::default().bg(Color::DarkGray).fg(Color::White));
+    let help_bar =
+        Paragraph::new(help_text).style(Style::default().bg(Color::DarkGray).fg(Color::White));
     f.render_widget(help_bar, help_area);
 }

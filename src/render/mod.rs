@@ -1,12 +1,14 @@
+use clap::ValueEnum;
+
 pub mod bars;
-pub mod rain;
-pub mod wave;
+pub mod particles;
 pub mod pulse;
+pub mod rain;
 pub mod spectrogram;
 pub mod spinner;
-pub mod particles;
+pub mod wave;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum ViewMode {
     Wave,
     Bars,
