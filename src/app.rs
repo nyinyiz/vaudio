@@ -1,6 +1,7 @@
 use crate::render::rain::RainDrop;
 use crate::render::ViewMode;
 use crate::signal::{SignalProcessor, SoundType};
+use crate::theme::Theme;
 use rand::Rng;
 use std::collections::VecDeque;
 
@@ -26,6 +27,7 @@ pub struct App {
     pub sensitivity: f32,
     pub mirror: bool,
     pub no_color: bool,
+    pub theme: Theme,
 
     // Audio State
     pub processor: SignalProcessor,
@@ -54,13 +56,20 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(mode: ViewMode, sensitivity: f32, mirror: bool, no_color: bool) -> Self {
+    pub fn new(
+        mode: ViewMode,
+        sensitivity: f32,
+        mirror: bool,
+        no_color: bool,
+        theme: Theme,
+    ) -> Self {
         let fft_size = 1024;
         Self {
             mode,
             sensitivity,
             mirror,
             no_color,
+            theme,
             processor: SignalProcessor::new(fft_size),
             fft_data: vec![0.0; fft_size / 2],
             peaks: vec![0.0; fft_size / 2],
@@ -236,6 +245,10 @@ impl App {
         self.sensitivity = (self.sensitivity + delta).max(0.1).min(10.0);
     }
 
+    pub fn cycle_theme(&mut self) {
+        self.theme = self.theme.next();
+    }
+
     fn detect_beat(&mut self, energy: f32) {
         let avg_energy = if self.energy_history.is_empty() {
             0.0
@@ -269,11 +282,11 @@ impl App {
 
 #[cfg(test)]
 mod tests {
-    use super::{App, ViewMode, BEAT_COOLDOWN_FRAMES};
+    use super::{App, Theme, ViewMode, BEAT_COOLDOWN_FRAMES};
 
     #[test]
     fn detect_beat_triggers_on_energy_spikes() {
-        let mut app = App::new(ViewMode::Bars, 1.0, false, false);
+        let mut app = App::new(ViewMode::Bars, 1.0, false, false, Theme::Neon);
         for _ in 0..20 {
             app.detect_beat(0.08);
         }
@@ -286,7 +299,7 @@ mod tests {
 
     #[test]
     fn detect_beat_uses_cooldown_between_spikes() {
-        let mut app = App::new(ViewMode::Bars, 1.0, false, false);
+        let mut app = App::new(ViewMode::Bars, 1.0, false, false, Theme::Neon);
         for _ in 0..20 {
             app.detect_beat(0.08);
         }

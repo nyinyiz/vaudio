@@ -68,6 +68,7 @@ vaudio [OPTIONS]
 - `--list`: List all available input devices.
 - `--no-color`: Disable color output for a monochrome look.
 - `--mirror`: Mirror the visualization (especially useful in `bars` mode).
+- `--theme <neon|fire|ice|rainbow>`: Set the color theme (default: `neon`).
 
 ### Keyboard Controls
 - `q`: Quit
@@ -78,6 +79,7 @@ vaudio [OPTIONS]
 - `5`: Switch to **Spectrogram** mode
 - `6`: Switch to **Spinner** mode
 - `7`: Switch to **Particles** mode
+- `t`: Cycle color theme
 - `+`: Increase sensitivity
 - `-`: Decrease sensitivity
 

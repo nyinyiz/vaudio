@@ -8,6 +8,7 @@ pub struct BarsWidget<'a> {
     pub data: &'a [f32],
     pub peaks: &'a [f32],
     pub color: Color,
+    pub peak_color: Color,
     pub mirror: bool,
 }
 
@@ -42,7 +43,7 @@ impl<'a> Widget for BarsWidget<'a> {
                 } else if y + 1 == peak_height && peak_height > 0 {
                     buf.get_mut(x, current_y)
                         .set_symbol("▔")
-                        .set_style(Style::default().fg(Color::White));
+                        .set_style(Style::default().fg(self.peak_color));
                 }
             }
         }

@@ -2,6 +2,7 @@ mod app;
 mod audio;
 mod render;
 mod signal;
+mod theme;
 
 use anyhow::Result;
 use app::App;
@@ -29,6 +30,7 @@ use std::{
     sync::mpsc,
     time::{Duration, Instant},
 };
+use theme::Theme;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -57,6 +59,10 @@ struct Args {
     #[arg(long)]
     no_color: bool,
 
+    /// Color theme
+    #[arg(long, value_enum, default_value_t = Theme::Neon)]
+    theme: Theme,
+
     /// Mirror the visualization
     #[arg(long)]
     mirror: bool,
@@ -84,7 +90,13 @@ fn main() -> Result<()> {
     let (tx, rx) = mpsc::sync_channel(10);
     let _capture = AudioCapture::new(args.device, tx)?;
 
-    let mut app = App::new(args.mode, args.sensitivity, args.mirror, args.no_color);
+    let mut app = App::new(
+        args.mode,
+        args.sensitivity,
+        args.mirror,
+        args.no_color,
+        args.theme,
+    );
     let tick_rate = Duration::from_secs_f32(1.0 / args.fps as f32);
 
     // Splash screen
@@ -161,6 +173,13 @@ mod tests {
 
         assert_eq!(err.kind(), clap::error::ErrorKind::InvalidValue);
     }
+
+    #[test]
+    fn parses_theme_names() {
+        let args = Args::try_parse_from(["vaudio", "--theme", "fire"]).unwrap();
+
+        assert_eq!(args.theme, crate::theme::Theme::Fire);
+    }
 }
 
 fn run_app<B: ratatui::backend::Backend>(
@@ -190,6 +209,7 @@ fn run_app<B: ratatui::backend::Backend>(
                     KeyCode::Char('7') => app.set_mode(ViewMode::Particles),
                     KeyCode::Char('+') => app.adjust_sensitivity(0.2),
                     KeyCode::Char('-') => app.adjust_sensitivity(-0.2),
+                    KeyCode::Char('t') => app.cycle_theme(),
                     _ => {}
                 }
             }
@@ -216,11 +236,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
     let area = chunks[0];
     let help_area = chunks[1];
 
-    let color = if app.no_color {
-        Color::White
-    } else {
-        Color::Green
-    };
+    let palette = app.theme.palette(app.no_color);
 
     // Render the visualizer in the main area
     match app.mode {
@@ -229,7 +245,8 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
                 BarsWidget {
                     data: &app.fft_data,
                     peaks: &app.peaks,
-                    color,
+                    color: palette.primary,
+                    peak_color: palette.peak,
                     mirror: app.mirror,
                 },
                 area,
@@ -239,7 +256,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
             f.render_widget(
                 WaveWidget {
                     samples: &app.wave_data,
-                    color,
+                    color: palette.primary,
                 },
                 area,
             );
@@ -248,7 +265,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
             f.render_widget(
                 RainWidget {
                     drops: &app.rain_drops,
-                    color,
+                    color: palette.primary,
                 },
                 area,
             );
@@ -257,7 +274,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
             f.render_widget(
                 PulseWidget {
                     rings: &app.pulse_rings,
-                    color,
+                    color: palette.primary,
                 },
                 area,
             );
@@ -266,7 +283,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
             f.render_widget(
                 SpectrogramWidget {
                     history: &app.spectrogram_history,
-                    color,
+                    color: palette.primary,
                 },
                 area,
             );
@@ -276,7 +293,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
                 SpinnerWidget {
                     angle: app.spinner_angle,
                     rms: app.rms,
-                    color,
+                    color: palette.primary,
                 },
                 area,
             );
@@ -285,7 +302,7 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
             f.render_widget(
                 ParticlesWidget {
                     particles: &app.particles,
-                    color,
+                    color: palette.primary,
                 },
                 area,
             );
@@ -294,29 +311,33 @@ fn ui(f: &mut ratatui::Frame, app: &App) {
 
     // Render the help bar at the bottom
     let mode_str = format!("{:?}", app.mode).to_uppercase();
+    let theme_str = format!("{:?}", app.theme).to_uppercase();
     let sound_str = format!("{:?}", app.sound_type).to_uppercase();
     let beat_str = if app.beat { "YES" } else { "NO" };
     let help_text = vec![Line::from(vec![
         Span::styled(" MODE: ", Style::default().add_modifier(Modifier::BOLD)),
-        Span::styled(mode_str, Style::default().fg(Color::Yellow)),
+        Span::styled(mode_str, Style::default().fg(palette.peak)),
+        Span::raw(" | "),
+        Span::styled(" THEME: ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(theme_str, Style::default().fg(palette.accent)),
         Span::raw(" | "),
         Span::styled(" DETECTED: ", Style::default().add_modifier(Modifier::BOLD)),
-        Span::styled(sound_str, Style::default().fg(Color::Cyan)),
+        Span::styled(sound_str, Style::default().fg(palette.accent)),
         Span::raw(" | "),
         Span::styled(" BEAT: ", Style::default().add_modifier(Modifier::BOLD)),
-        Span::styled(beat_str, Style::default().fg(Color::Magenta)),
+        Span::styled(beat_str, Style::default().fg(palette.primary)),
         Span::raw(" | "),
         Span::styled(" SENS: ", Style::default().add_modifier(Modifier::BOLD)),
         Span::styled(
             format!("{:.1}", app.sensitivity),
-            Style::default().fg(Color::Yellow),
+            Style::default().fg(palette.peak),
         ),
         Span::raw(" | "),
         Span::styled(" KEYS: ", Style::default().add_modifier(Modifier::BOLD)),
-        Span::raw("[1-7] Modes [+/-] Adjust Sens [q] Quit"),
+        Span::raw("[1-7] Modes [t] Theme [+/-] Sens [q] Quit"),
     ])];
 
     let help_bar =
-        Paragraph::new(help_text).style(Style::default().bg(Color::DarkGray).fg(Color::White));
+        Paragraph::new(help_text).style(Style::default().bg(palette.help_bg).fg(palette.help_fg));
     f.render_widget(help_bar, help_area);
 }
